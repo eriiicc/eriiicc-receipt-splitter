@@ -18,7 +18,7 @@ export default function PaymentScreen() {
   };
 
  const openCashApp = () => {
-  const url = `cashapp://cash.app/pay/$rjblack14`;
+  const url = `cashapp://cash.app/pay/$ericg`;
   Linking.canOpenURL(url).then(supported => {
     if (supported) {
       Alert.alert(
@@ -28,7 +28,7 @@ export default function PaymentScreen() {
          { text: 'Cancel' }]
       );
     } else {
-      Linking.openURL(`https://cash.app/$rjblack14`);
+      Linking.openURL(`https://cash.app/$ericg`);
     }
   });
 };

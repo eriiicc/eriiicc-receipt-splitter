@@ -22,8 +22,8 @@ export default function LoginScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <Text style={styles.title}>Receipt Splitter</Text>
-      <Text style={styles.subtitle}>Enter your phone number to get started</Text>
+      <Text style={styles.title}>Settled</Text>
+      <Text style={styles.subtitle}>Split Bills. Get Settled.</Text>
       <TextInput
         style={styles.input}
         placeholder="(555) 555-5555"
@@ -46,13 +46,7 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
+ container: { flex: 1, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', padding: 24, paddingBottom: 80 },
   title: {
     fontSize: 28,
     fontWeight: '600',
