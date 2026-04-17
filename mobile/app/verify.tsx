@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 
 export default function VerifyScreen() {
@@ -21,7 +21,9 @@ export default function VerifyScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+     style={styles.container}
+     behavior={Platform.OS ==='ios' ? 'padding' : 'height'}>
       <Text style={styles.title}>Check your texts</Text>
       <Text style={styles.subtitle}>Enter the 6 digit code we sent you</Text>
       <Text style={styles.hint}>use 123456 for testing</Text>
@@ -42,7 +44,7 @@ export default function VerifyScreen() {
           {loading ? 'Verifying...' : 'Verify'}
         </Text>
       </TouchableOpacity>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
