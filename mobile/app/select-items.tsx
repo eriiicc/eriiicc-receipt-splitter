@@ -26,20 +26,16 @@ export default function SelectItemsScreen() {
       .toFixed(2);
   };
 
-  const handleConfirm = () => {
+const handleConfirm = () => {
     const selected = itemList.filter((i: any) => i.selected);
     if (selected.length === 0) {
       Alert.alert('Select at least one item');
       return;
     }
-    Alert.alert(
-      'Your total',
-      `You owe $${getTotal()}`,
-      [
-        { text: 'Pay now', onPress: () => Alert.alert('Payment coming in Phase 5!') },
-        { text: 'Cancel' }
-      ]
-    );
+    router.push({
+      pathname: '/invite',
+      params: { items: JSON.stringify(selected) },
+    });
   };
 
   return (

@@ -49,6 +49,17 @@ console.log('Full Vision response:', JSON.stringify(data).substring(0, 500));
   }
 });
 
+app.post('/api/send-invite', async (req, res) => {
+  try {
+    const { phoneNumber, senderName, sessionId } = req.body;
+    console.log(`[MOCK SMS] To: ${phoneNumber}`);
+    console.log(`[MOCK SMS] Message: ${senderName} is splitting a bill with you! Session: ${sessionId}`);
+    res.json({ success: true, messageId: 'mock-' + Date.now() });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 function parseReceiptText(text) {
   const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
   const items = [];
