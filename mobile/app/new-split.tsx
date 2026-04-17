@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Alert, Image, ActivityIndicat
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
+import BackButton from '../components/BackButton';
 
 export default function NewSplitScreen() {
   const [image, setImage] = useState(null);
@@ -40,23 +41,24 @@ export default function NewSplitScreen() {
   const takePhoto = async () => {
     const permission = await ImagePicker.requestCameraPermissionsAsync();
     if (!permission.granted) { Alert.alert('Permission needed', 'Please allow camera access'); return; }
-    const result = await ImagePicker.launchCameraAsync({ quality: 0.8, mediaTypes: ImagePicker.MediaTypeOptions.Images });
+    const result = await ImagePicker.launchCameraAsync({ quality: 0.8, mediaTypes: 'images' });
     if (!result.canceled) { setImage(result.assets[0].uri); scanReceipt(result.assets[0].uri); }
   };
 
   const pickPhoto = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({ quality: 0.8, mediaTypes: ImagePicker.MediaTypeOptions.Images });
+    const result = await ImagePicker.launchImageLibraryAsync({ quality: 0.8, mediaTypes: 'images' });
     if (!result.canceled) { setImage(result.assets[0].uri); scanReceipt(result.assets[0].uri); }
   };
 
   return (
     <View style={styles.container}>
+       <BackButton />
       <Text style={styles.title}>New Split</Text>
       <Text style={styles.subtitle}>Take a photo of your receipt</Text>
       {image && <Image source={{ uri: image }} style={styles.preview} />}
       {loading ? (
         <View style={styles.loadingBox}>
-          <ActivityIndicator size="large" color="#534AB7" />
+          <ActivityIndicator size="large" color="#1A4A3A" />
           <Text style={styles.loadingText}>Reading your receipt...</Text>
         </View>
       ) : (
@@ -74,15 +76,15 @@ export default function NewSplitScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', padding: 24, paddingTop: 64 },
-  title: { fontSize: 28, fontWeight: '600', color: '#1a1a1a', marginBottom: 8 },
-  subtitle: { fontSize: 15, color: '#888', marginBottom: 32 },
+  container: { flex: 1, backgroundColor: '#F2EDE0', padding: 24, paddingTop: 5, alignItems: 'center', justifyContent: 'center' },
+  title: { fontSize: 28, fontWeight: '600', color: '#1A4A3A', marginBottom: 8, textAlign: 'center' },
+  subtitle: { fontSize: 15, color: '#6B7B6E', marginBottom: 32, textAlign: 'center' },
   preview: { width: '100%', height: 200, borderRadius: 10, marginBottom: 24, resizeMode: 'cover' },
   loadingBox: { alignItems: 'center', marginTop: 40 },
-  loadingText: { marginTop: 16, fontSize: 15, color: '#888' },
-  buttonGroup: { gap: 12 },
-  button: { backgroundColor: '#534AB7', padding: 16, borderRadius: 10, alignItems: 'center' },
-  buttonOutline: { borderWidth: 1, borderColor: '#534AB7', padding: 16, borderRadius: 10, alignItems: 'center' },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '500' },
-  buttonOutlineText: { color: '#534AB7', fontSize: 16, fontWeight: '500' },
+  loadingText: { marginTop: 16, fontSize: 15, color: '#6B7B6E' },
+  buttonGroup: { gap: 12, width: '100%' },
+  button: { backgroundColor: '#1A4A3A', padding: 16, borderRadius: 10, alignItems: 'center' },
+  buttonOutline: { borderWidth: 1, borderColor: '#1A4A3A', padding: 16, borderRadius: 10, alignItems: 'center' },
+  buttonText: { color: '#F0D080', fontSize: 16, fontWeight: '500' },
+  buttonOutlineText: { color: '#1A4A3A', fontSize: 16, fontWeight: '500' },
 });
