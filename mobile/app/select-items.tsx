@@ -32,9 +32,10 @@ const handleConfirm = () => {
       Alert.alert('Select at least one item');
       return;
     }
+    const total = selected.reduce((sum: number, i: any) => sum + i.price, 0).toFixed(2);
     router.push({
-      pathname: '/invite',
-      params: { items: JSON.stringify(selected) },
+      pathname: '/payment',
+      params: { total, items: JSON.stringify(selected) },
     });
   };
 
