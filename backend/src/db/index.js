@@ -1,37 +1,51 @@
-const { Low } = require('lowdb');
-const { JSONFile } = require('lowdb/node');
+const fs = require('fs');
 const path = require('path');
 
-const adapter = new JSONFile(path.join(__dirname, '../../db.json'));
-const db = new Low(adapter, { sessions: {}, claims: [] });
+const DB_PATH = path.join(__dirname, '../../db.json');
 
-const init = async () => {
-  await db.read();
-  db.data ||= { sessions: {}, claims: [] };
+const readDb = () => {
+  if (!fs.existsSync(DB_PATH)) {
+    return { sessions: {}, claims: [] };
+  }
+  try {
+    return JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
+  } catch {
+    return { sessions: {}, claims: [] };
+  }
+};
+
+const writeDb = (data) => {
+  fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
+};
+
+const init = () => {
+  if (!fs.existsSync(DB_PATH)) {
+    writeDb({ sessions: {}, claims: [] });
+  }
 };
 
 const createSession = async (id, restaurantName, items, tax, tip) => {
-  await db.read();
-  db.data.sessions[id] = { id, restaurantName, items, tax, tip, createdAt: Date.now() };
-  await db.write();
+  const db = readDb();
+  db.sessions[id] = { id, restaurantName, items, tax, tip, createdAt: Date.now() };
+  writeDb(db);
 };
 
 const getSession = async (id) => {
-  await db.read();
-  return db.data.sessions[id] || null;
+  const db = readDb();
+  return db.sessions[id] || null;
 };
 
 const claimItems = async (sessionId, selections, claimedBy) => {
-  await db.read();
+  const db = readDb();
   for (const { itemIndex, qty } of selections) {
-    db.data.claims.push({ sessionId, itemIndex, qtyClaimed: qty, claimedBy, createdAt: Date.now() });
+    db.claims.push({ sessionId, itemIndex, qtyClaimed: qty, claimedBy, createdAt: Date.now() });
   }
-  await db.write();
+  writeDb(db);
 };
 
 const getClaims = async (sessionId) => {
-  await db.read();
-  return db.data.claims.filter(c => c.sessionId === sessionId);
+  const db = readDb();
+  return db.claims.filter(c => c.sessionId === sessionId);
 };
 
 module.exports = { init, createSession, getSession, claimItems, getClaims };
