@@ -4,8 +4,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import BackButton from '../components/BackButton';
 
 export default function SelectItemsScreen() {
-  const { items, tax, tip } = useLocalSearchParams();
-  console.log('Select items received tax:', tax, 'tip:', tip);
+  const { items, tax, tip, restaurantName } = useLocalSearchParams();
+  console.log('Restaurant name received:', restaurantName);
   const router = useRouter();
 
   const parsed = JSON.parse(items as string);
@@ -57,6 +57,9 @@ export default function SelectItemsScreen() {
     <View style={styles.container}>
       <BackButton />
       <Text style={styles.title}>Select your items</Text>
+      {restaurantName ? (
+        <Text style={styles.restaurantName}>{restaurantName as string}</Text>
+      ) : null}
       <Text style={styles.subtitle}>Choose how many of each you ordered</Text>
       <ScrollView style={styles.list}>
         {itemList.map((item: any, index: number) => (
@@ -125,6 +128,8 @@ const styles = StyleSheet.create({
   title: { fontSize: 28, fontWeight: '600', color: '#1A4A3A', marginBottom: 8, paddingHorizontal: 24 },
   subtitle: { fontSize: 15, color: '#6B7B6E', marginBottom: 24, paddingHorizontal: 24 },
   list: { flex: 1 },
+    restaurantName: { fontSize: 18, fontWeight: '500', color: '#26705A', paddingHorizontal: 24, marginBottom: 4 },
+
   item: { paddingVertical: 14, paddingHorizontal: 24, borderBottomWidth: 1, borderBottomColor: '#EEE8D0' },
   itemEven: { backgroundColor: '#F2EDE0' },
   itemOdd: { backgroundColor: '#EEE8D0' },

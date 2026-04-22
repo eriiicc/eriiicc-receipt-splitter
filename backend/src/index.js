@@ -33,7 +33,7 @@ app.post('/api/scan-receipt', async (req, res) => {
     console.log('Extracted text:', text.substring(0, 200));
     console.log('Error if any:', JSON.stringify(data.responses?.[0]?.error));
     const { items, tax, tip } = parseReceiptText(text);
-    res.json({ items, tax, tip });
+    res.json({ items, tax, tip, restaurantName });
   } catch (error) {
     console.log('Caught error:', error.message);
     res.status(500).json({ error: error.message });
@@ -67,9 +67,8 @@ app.post('/api/scan-receipt-url', async (req, res) => {
     await new Promise(resolve => setTimeout(resolve, 3000));
     const text = await page.evaluate(() => document.body.innerText);
     console.log('Page text (first 500 chars):', text.substring(0, 500));
-   const { items, tax, tip } = parseReceiptText(text);
-    console.log('Found items:', items.length, 'Tax:', tax, 'Tip:', tip);
-    res.json({ items, tax, tip });
+  const { items, tax, tip, restaurantName } = parseReceiptText(text);
+res.json({ items, tax, tip, restaurantName });
   } catch (error) {
     console.log('Puppeteer error:', error.message);
     res.status(500).json({ error: error.message });
@@ -80,6 +79,15 @@ app.post('/api/scan-receipt-url', async (req, res) => {
 
 function parseReceiptText(text) {
   const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  let restaurantName = '';
+  for (let i = 0; i < Math.min(3, lines.length); i++) {
+    const line = lines[i];
+    if (line.length > 2 && !/^\d/.test(line) && !/^http/i.test(line)) {
+      restaurantName = line;
+      break;
+    }
+  }
+  console.log('Restaurant name found:', restaurantName);
   const items = [];
   const priceRegex = /\$?(\d+\.\d{2})/;
   let tax = 0;
@@ -158,7 +166,7 @@ function parseReceiptText(text) {
       }
     }
   }
-  return { items, tax, tip };
+  return { items, tax, tip, restaurantName };
 }
 
 app.listen(PORT, () => {

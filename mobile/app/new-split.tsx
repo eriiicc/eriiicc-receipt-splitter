@@ -26,10 +26,12 @@ export default function NewSplitScreen() {
       : [{ name: 'Could not read receipt', price: 0.00, quantity: 1 }];
     const tax = data.tax || 0;
     const tip = data.tip || 0;
+    const restaurantName = data.restaurantName || '';
     console.log('Navigating with tax:', tax, 'tip:', tip);
+    console.log('Restaurant name from backend:', data.restaurantName);
     router.push({
       pathname: '/select-items',
-      params: { items: JSON.stringify(items), tax: tax.toString(), tip: tip.toString() },
+      params: { items: JSON.stringify(items), tax: tax.toString(), tip: tip.toString(), restaurantName },
     });
   };
 
