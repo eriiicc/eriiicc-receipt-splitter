@@ -104,12 +104,19 @@ function parseReceiptText(text) {
     const line = lines[i];
     if (skipLine(line)) continue;
 
-    const priceMatch = line.match(priceRegex);
+  const priceMatch = line.match(priceRegex);
     if (priceMatch) {
       const price = parseFloat(priceMatch[1]);
       const name = line.replace(/\$?\d+\.\d{2}/, '').trim();
+      const qtyMatch = name.match(/^(\d+)\s+(.+)/);
       if (name.length > 2 && price > 0 && price < 500 && !skipLine(name)) {
-        items.push({ name, price });
+        if (qtyMatch) {
+          const qty = parseInt(qtyMatch[1]);
+          const itemName = qtyMatch[2];
+          items.push({ name: itemName, price: price / qty, quantity: qty });
+        } else {
+          items.push({ name, price, quantity: 1 });
+        }
       }
       continue;
     }
@@ -120,7 +127,14 @@ function parseReceiptText(text) {
       const price = parseFloat(nextPriceMatch[1]);
       const name = line.replace(/\$?\d+\.\d{2}/, '').trim();
       if (name.length > 2 && price > 0 && price < 500 && !skipLine(name)) {
-        items.push({ name, price });
+        const qtyMatch2 = name.match(/^(\d+)\s+(.+)/);
+        if (qtyMatch2) {
+          const qty = parseInt(qtyMatch2[1]);
+          const itemName = qtyMatch2[2];
+          items.push({ name: itemName, price: price / qty, quantity: qty });
+        } else {
+          items.push({ name, price, quantity: 1 });
+        }
         i++;
       }
     }
