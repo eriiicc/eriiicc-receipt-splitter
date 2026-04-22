@@ -11,10 +11,10 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "better-sqlite3": "^12.9.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "lowdb": "^7.0.1",
     "pg": "^8.20.0",
     "puppeteer": "^24.42.0",
     "sharp": "^0.34.5",

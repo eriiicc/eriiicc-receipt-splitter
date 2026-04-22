@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
-const { createSession, getSession, claimItems, getClaims } = require('./db/index');
+const { init, createSession, getSession, claimItems, getClaims } = require('./db/index');
+init();
 require('dotenv').config();
 
 const app = express();
@@ -13,38 +14,49 @@ app.get('/', (req, res) => {
   res.json({ message: 'Receipt splitter API is running!' });
 });
 
-app.post('/api/scan-receipt', async (req, res) => {
-  console.log('Request received, image size:', req.body.image?.length);
+app.post('/api/scan-receipt-url', async (req, res) => {
+  let browser = null;
   try {
-    const { image } = req.body;
-    const cleanImage = image.replace(/^data:image\/\w+;base64,/, '').replace(/\s/g, '');
-    const response = await fetch(
-      `https://vision.googleapis.com/v1/images:annotate?key=${process.env.GOOGLE_VISION_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          requests: [{ image: { content: cleanImage }, features: [{ type: 'TEXT_DETECTION' }] }],
-        }),
-      }
-    );
-    console.log('Vision API status:', response.status);
-    const data = await response.json();
-    const text = data.responses?.[0]?.fullTextAnnotation?.text || '';
-    console.log('Extracted text:', text.substring(0, 200));
-    console.log('Error if any:', JSON.stringify(data.responses?.[0]?.error));
-    const { items, tax, tip } = parseReceiptText(text);
+    const { url } = req.body;
+    console.log('Fetching receipt URL:', url);
+    
+    let text = '';
+    try {
+      const puppeteer = require('puppeteer');
+      browser = await puppeteer.launch({
+        headless: 'new',
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      });
+      const page = await browser.newPage();
+      await page.setUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15');
+      await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      text = await page.evaluate(() => document.body.innerText);
+      console.log('Page text (first 500 chars):', text.substring(0, 500));
+    } catch (puppeteerError) {
+      console.log('Puppeteer not available, falling back to fetch:', puppeteerError.message);
+      const response = await fetch(url, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15' }
+      });
+      text = await response.text();
+      text = text.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+    }
+
+    const { items, tax, tip, restaurantName } = parseReceiptText(text);
+    console.log('Found items:', items.length, 'Tax:', tax, 'Tip:', tip);
     res.json({ items, tax, tip, restaurantName });
   } catch (error) {
-    console.log('Caught error:', error.message);
+    console.log('URL scan error:', error.message);
     res.status(500).json({ error: error.message });
+  } finally {
+    if (browser) await browser.close();
   }
 });
 
 app.post('/api/send-invite', async (req, res) => {
   try {
     const { phoneNumber, senderName, sessionId, items, tax, tip, restaurantName, guestLink } = req.body;
-    createSession(sessionId, restaurantName, items, tax, tip);
+    await createSession(sessionId, restaurantName, items, tax, tip);
     console.log('[MOCK SMS] To:', phoneNumber);
     console.log('[MOCK SMS] Message:', senderName, 'is splitting a bill with you!');
     console.log('[MOCK SMS] Guest link:', guestLink);
@@ -81,16 +93,16 @@ res.json({ items, tax, tip, restaurantName });
   }
 });
 
-app.get('/api/session/:id', (req, res) => {
+app.get('/api/session/:id', async (req, res) => {
   try {
-    const session = getSession(req.params.id);
+    const session = await getSession(req.params.id);
     if (!session) {
       return res.status(404).json({ error: 'Session not found' });
     }
-    const claims = getClaims(req.params.id);
+    const claims = await getClaims(req.params.id);
     const claimedMap = {};
     for (const claim of claims) {
-      claimedMap[claim.item_index] = (claimedMap[claim.item_index] || 0) + claim.quantity_claimed;
+      claimedMap[claim.itemIndex] = (claimedMap[claim.itemIndex] || 0) + claim.qtyClaimed;
     }
     const itemsWithAvailability = session.items.map((item, index) => ({
       ...item,
@@ -103,10 +115,10 @@ app.get('/api/session/:id', (req, res) => {
   }
 });
 
-app.post('/api/session/:id/claim', (req, res) => {
+app.post('/api/session/:id/claim', async (req, res) => {
   try {
     const { selections, claimedBy } = req.body;
-    claimItems(req.params.id, selections, claimedBy || 'guest');
+    await claimItems(req.params.id, selections, claimedBy || 'guest');
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
