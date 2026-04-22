@@ -1,106 +1,142 @@
 const fs = require('fs');
 const path = require('path');
-const backButtonImport = `import BackButton from '../components/BackButton';`;
-const colors = {
-  primary: '#1A4A3A',
-  secondary: '#26705A',
-  accent: '#F0D080',
-  background: '#F2EDE0',
-  card: '#EEE8D0',
-  text: '#1A1A1A',
-  muted: '#6B7B6E',
-  white: '#fff',
-};
 
-const newSplitScreen = `import { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, Image, ActivityIndicator } from 'react-native';
-import * as ImageManipulator from 'expo-image-manipulator';
-import * as ImagePicker from 'expo-image-picker';
-import { useRouter } from 'expo-router';
+const code = `const express = require('express');
+const cors = require('cors');
+require('dotenv').config();
 
-export default function NewSplitScreen() {
-  const [image, setImage] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-  const convertToJpeg = async (uri) => {
-    const result = await ImageManipulator.manipulateAsync(
-      uri,
-      [{ resize: { width: 1200 } }],
-      { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG, base64: true }
-    );
-    return result.base64;
-  };
+app.use(cors());
+app.use(express.json({ limit: '10mb' }));
 
-  const scanReceipt = async (uri) => {
-    try {
-      setLoading(true);
-      const base64 = await convertToJpeg(uri);
-      const response = await fetch('http://192.168.0.170:3000/api/scan-receipt', {
+app.get('/', (req, res) => {
+  res.json({ message: 'Receipt splitter API is running!' });
+});
+
+app.post('/api/scan-receipt', async (req, res) => {
+  console.log('Request received, image size:', req.body.image?.length);
+  try {
+    const { image } = req.body;
+    console.log('Calling Vision API...');
+    const cleanImage = image.replace(/^data:image\\/\\w+;base64,/, '').replace(/\\s/g, '');
+    const jpegBase64 = cleanImage;
+    const response = await fetch(
+      \\\`https://vision.googleapis.com/v1/images:annotate?key=\\\${process.env.GOOGLE_VISION_API_KEY}\\\`,
+      {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: base64 }),
-      });
-      const data = await response.json();
-      const items = data.items && data.items.length > 0 ? data.items : [{ name: 'Could not read receipt', price: 0.00 }];
-      router.push({ pathname: '/select-items', params: { items: JSON.stringify(items) } });
-    } catch (error) {
-      Alert.alert('Error', 'Could not connect to server');
-    } finally {
-      setLoading(false);
+        body: JSON.stringify({
+          requests: [{ image: { content: jpegBase64 }, features: [{ type: 'TEXT_DETECTION' }] }],
+        }),
+      }
+    );
+    console.log('Vision API status:', response.status);
+    const data = await response.json();
+    console.log('Vision API data keys:', Object.keys(data));
+    const text = data.responses?.[0]?.fullTextAnnotation?.text || '';
+    console.log('Full Vision response:', JSON.stringify(data.responses?.[0]?.fullTextAnnotation?.text));
+    console.log('Error if any:', JSON.stringify(data.responses?.[0]?.error));
+    const items = parseReceiptText(text);
+    res.json({ items });
+  } catch (error) {
+    console.log('Caught error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/send-invite', async (req, res) => {
+  try {
+    const { phoneNumber, senderName, sessionId } = req.body;
+    console.log('[MOCK SMS] To:', phoneNumber);
+    console.log('[MOCK SMS] Message:', senderName, 'is splitting a bill with you! Session:', sessionId);
+    res.json({ success: true, messageId: 'mock-' + Date.now() });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/scan-receipt-url', async (req, res) => {
+  let browser = null;
+  try {
+    const { url } = req.body;
+    console.log('Fetching receipt URL with Puppeteer:', url);
+    const puppeteer = require('puppeteer');
+    browser = await puppeteer.launch({
+      headless: 'new',
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    });
+    const page = await browser.newPage();
+    await page.setUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15');
+    await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    const text = await page.evaluate(() => document.body.innerText);
+    console.log('Page text (first 500 chars):', text.substring(0, 500));
+    const items = parseReceiptText(text);
+    console.log('Found items:', items.length);
+    res.json({ items });
+  } catch (error) {
+    console.log('Puppeteer error:', error.message);
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (browser) await browser.close();
+  }
+});
+
+function parseReceiptText(text) {
+  const lines = text.split('\\n').map(l => l.trim()).filter(l => l.length > 0);
+  const items = [];
+  const priceRegex = /\\$?(\\d+\\.\\d{2})/;
+
+  const skipLine = (line) => {
+    const skipPatterns = [
+      /subtotal/i, /^total/i, /tax/i, /tip/i, /cash/i,
+      /change/i, /balance/i, /savings/i, /surcharge/i,
+      /guest count/i, /ordered:/i, /check #/i,
+      /input type/i, /transaction/i, /authorization/i,
+      /approval/i, /payment id/i, /application id/i,
+      /emv/i, /chip/i, /american express/i, /visa/i,
+      /mastercard/i, /xxxx/i, /approved/i,
+      /^\\d{1,2}\\/\\d{1,2}\\/\\d{2,4}\\s+\\d{1,2}:\\d{2}/,
+      /^[0-9]{3}-[0-9]{3}/,
+      /^[tn]$/i, /regular price/i, /% off/i,
+      /new bal/i, /cannot be/i, /^\\d+$/,
+    ];
+    return skipPatterns.some(p => p.test(line));
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (skipLine(line)) continue;
+
+    const priceMatch = line.match(priceRegex);
+    if (priceMatch) {
+      const price = parseFloat(priceMatch[1]);
+      const name = line.replace(/\\$?\\d+\\.\\d{2}/, '').trim();
+      if (name.length > 2 && price > 0 && price < 500 && !skipLine(name)) {
+        items.push({ name, price });
+      }
+      continue;
     }
-  };
 
-  const takePhoto = async () => {
-    const permission = await ImagePicker.requestCameraPermissionsAsync();
-    if (!permission.granted) { Alert.alert('Permission needed', 'Please allow camera access'); return; }
-    const result = await ImagePicker.launchCameraAsync({ quality: 0.8, mediaTypes: 'images' });
-    if (!result.canceled) { setImage(result.assets[0].uri); scanReceipt(result.assets[0].uri); }
-  };
-
-  const pickPhoto = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({ quality: 0.8, mediaTypes: 'images' });
-    if (!result.canceled) { setImage(result.assets[0].uri); scanReceipt(result.assets[0].uri); }
-  };
-
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>New Split</Text>
-      <Text style={styles.subtitle}>Take a photo of your receipt</Text>
-      {image && <Image source={{ uri: image }} style={styles.preview} />}
-      {loading ? (
-        <View style={styles.loadingBox}>
-          <ActivityIndicator size="large" color="${colors.primary}" />
-          <Text style={styles.loadingText}>Reading your receipt...</Text>
-        </View>
-      ) : (
-        <View style={styles.buttonGroup}>
-          <TouchableOpacity style={styles.button} onPress={takePhoto}>
-            <Text style={styles.buttonText}>Take Photo</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.buttonOutline} onPress={pickPhoto}>
-            <Text style={styles.buttonOutlineText}>Choose from Library</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-    </View>
-  );
+    const nextLine = lines[i + 1] || '';
+    const nextPriceMatch = nextLine.match(priceRegex);
+    if (nextPriceMatch && !skipLine(nextLine)) {
+      const price = parseFloat(nextPriceMatch[1]);
+      const name = line.replace(/\\$?\\d+\\.\\d{2}/, '').trim();
+      if (name.length > 2 && price > 0 && price < 500 && !skipLine(name)) {
+        items.push({ name, price });
+        i++;
+      }
+    }
+  }
+  return items;
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '${colors.background}', padding: 24, paddingTop: 64 },
-  title: { fontSize: 28, fontWeight: '600', color: '${colors.primary}', marginBottom: 8 },
-  subtitle: { fontSize: 15, color: '${colors.muted}', marginBottom: 32 },
-  preview: { width: '100%', height: 200, borderRadius: 10, marginBottom: 24, resizeMode: 'cover' },
-  loadingBox: { alignItems: 'center', marginTop: 40 },
-  loadingText: { marginTop: 16, fontSize: 15, color: '${colors.muted}' },
-  buttonGroup: { gap: 12 },
-  button: { backgroundColor: '${colors.primary}', padding: 16, borderRadius: 10, alignItems: 'center' },
-  buttonOutline: { borderWidth: 1, borderColor: '${colors.primary}', padding: 16, borderRadius: 10, alignItems: 'center' },
-  buttonText: { color: '${colors.accent}', fontSize: 16, fontWeight: '500' },
-  buttonOutlineText: { color: '${colors.primary}', fontSize: 16, fontWeight: '500' },
+app.listen(PORT, () => {
+  console.log(\\\`Server running on http://localhost:\\\${PORT}\\\`);
 });`;
 
-const appDir = path.join(__dirname, '..', 'mobile', 'app');
-fs.writeFileSync(path.join(appDir, 'new-split.tsx'), newSplitScreen);
-console.log('New split screen updated!');
+fs.writeFileSync(path.join(__dirname, 'src', 'index.js'), code);
+console.log('Done! Backend index.js rewritten.');
