@@ -32,8 +32,8 @@ app.post('/api/scan-receipt', async (req, res) => {
     const text = data.responses?.[0]?.fullTextAnnotation?.text || '';
     console.log('Extracted text:', text.substring(0, 200));
     console.log('Error if any:', JSON.stringify(data.responses?.[0]?.error));
-    const items = parseReceiptText(text);
-    res.json({ items });
+    const { items, tax, tip } = parseReceiptText(text);
+    res.json({ items, tax, tip });
   } catch (error) {
     console.log('Caught error:', error.message);
     res.status(500).json({ error: error.message });
@@ -67,9 +67,9 @@ app.post('/api/scan-receipt-url', async (req, res) => {
     await new Promise(resolve => setTimeout(resolve, 3000));
     const text = await page.evaluate(() => document.body.innerText);
     console.log('Page text (first 500 chars):', text.substring(0, 500));
-    const items = parseReceiptText(text);
-    console.log('Found items:', items.length);
-    res.json({ items });
+   const { items, tax, tip } = parseReceiptText(text);
+    console.log('Found items:', items.length, 'Tax:', tax, 'Tip:', tip);
+    res.json({ items, tax, tip });
   } catch (error) {
     console.log('Puppeteer error:', error.message);
     res.status(500).json({ error: error.message });
@@ -82,10 +82,12 @@ function parseReceiptText(text) {
   const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
   const items = [];
   const priceRegex = /\$?(\d+\.\d{2})/;
+  let tax = 0;
+  let tip = 0;
 
   const skipLine = (line) => {
     const skipPatterns = [
-      /subtotal/i, /^total/i, /tax/i, /tip/i, /cash/i,
+      /subtotal/i, /^total/i, /cash/i,
       /change/i, /balance/i, /savings/i, /surcharge/i,
       /guest count/i, /ordered:/i, /check #/i,
       /input type/i, /transaction/i, /authorization/i,
@@ -102,9 +104,26 @@ function parseReceiptText(text) {
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
+
+    const taxMatch = line.match(/tax/i);
+    if (taxMatch) {
+      const priceMatch = line.match(priceRegex);
+      if (priceMatch) { tax = parseFloat(priceMatch[1]); continue; }
+      const nextLine = lines[i + 1] || '';
+      const nextPriceMatch = nextLine.match(priceRegex);
+      if (nextPriceMatch) { tax = parseFloat(nextPriceMatch[1]); i++; continue; }
+    }
+
+    const tipMatch = line.match(/^tip$/i);
+    if (tipMatch) {
+      const nextLine = lines[i + 1] || '';
+      const nextPriceMatch = nextLine.match(priceRegex);
+      if (nextPriceMatch) { tip = parseFloat(nextPriceMatch[1]); i++; continue; }
+    }
+
     if (skipLine(line)) continue;
 
-  const priceMatch = line.match(priceRegex);
+    const priceMatch = line.match(priceRegex);
     if (priceMatch) {
       const price = parseFloat(priceMatch[1]);
       const name = line.replace(/\$?\d+\.\d{2}/, '').trim();
@@ -126,8 +145,8 @@ function parseReceiptText(text) {
     if (nextPriceMatch && !skipLine(nextLine)) {
       const price = parseFloat(nextPriceMatch[1]);
       const name = line.replace(/\$?\d+\.\d{2}/, '').trim();
+      const qtyMatch2 = name.match(/^(\d+)\s+(.+)/);
       if (name.length > 2 && price > 0 && price < 500 && !skipLine(name)) {
-        const qtyMatch2 = name.match(/^(\d+)\s+(.+)/);
         if (qtyMatch2) {
           const qty = parseInt(qtyMatch2[1]);
           const itemName = qtyMatch2[2];
@@ -139,7 +158,7 @@ function parseReceiptText(text) {
       }
     }
   }
-  return items;
+  return { items, tax, tip };
 }
 
 app.listen(PORT, () => {

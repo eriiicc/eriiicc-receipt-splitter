@@ -4,10 +4,14 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import BackButton from '../components/BackButton';
 
 export default function SelectItemsScreen() {
-  const { items } = useLocalSearchParams();
+  const { items, tax, tip } = useLocalSearchParams();
+  console.log('Select items received tax:', tax, 'tip:', tip);
   const router = useRouter();
 
   const parsed = JSON.parse(items as string);
+  const taxAmount = parseFloat(tax as string) || 0;
+  const tipAmount = parseFloat(tip as string) || 0;
+
   const [itemList, setItemList] = useState(
     parsed.map((item: any) => ({
       ...item,
@@ -24,10 +28,20 @@ export default function SelectItemsScreen() {
     );
   };
 
+  const getSubtotal = () =>
+    itemList.reduce((sum: number, i: any) => sum + i.price * i.selectedQty, 0);
+
+  const getReceiptSubtotal = () =>
+    itemList.reduce((sum: number, i: any) => sum + i.price * i.quantity, 0);
+
+  const getProportionalShare = (amount: number) => {
+    const receiptSubtotal = getReceiptSubtotal();
+    if (receiptSubtotal === 0) return 0;
+    return (getSubtotal() / receiptSubtotal) * amount;
+  };
+
   const getTotal = () => {
-    return itemList
-      .reduce((sum: number, i: any) => sum + i.price * i.selectedQty, 0)
-      .toFixed(2);
+    return (getSubtotal() + getProportionalShare(taxAmount) + getProportionalShare(tipAmount)).toFixed(2);
   };
 
   const handleConfirm = () => {
@@ -36,10 +50,7 @@ export default function SelectItemsScreen() {
       Alert.alert('Select at least one item');
       return;
     }
-    const total = itemList
-      .reduce((sum: number, i: any) => sum + i.price * i.selectedQty, 0)
-      .toFixed(2);
-    router.push({ pathname: '/payment', params: { total, items: JSON.stringify(selected) } });
+    router.push({ pathname: '/payment', params: { total: getTotal(), items: JSON.stringify(selected) } });
   };
 
   return (
@@ -73,6 +84,28 @@ export default function SelectItemsScreen() {
             </View>
           </View>
         ))}
+
+        {getSubtotal() > 0 && (taxAmount > 0 || tipAmount > 0) && (
+          <View style={styles.breakdown}>
+            <Text style={styles.breakdownTitle}>Your share breakdown</Text>
+            <View style={styles.breakdownRow}>
+              <Text style={styles.breakdownLabel}>Items</Text>
+              <Text style={styles.breakdownValue}>${getSubtotal().toFixed(2)}</Text>
+            </View>
+            {taxAmount > 0 && (
+              <View style={styles.breakdownRow}>
+                <Text style={styles.breakdownLabel}>Tax (proportional)</Text>
+                <Text style={styles.breakdownValue}>${getProportionalShare(taxAmount).toFixed(2)}</Text>
+              </View>
+            )}
+            {tipAmount > 0 && (
+              <View style={styles.breakdownRow}>
+                <Text style={styles.breakdownLabel}>Tip (proportional)</Text>
+                <Text style={styles.breakdownValue}>${getProportionalShare(tipAmount).toFixed(2)}</Text>
+              </View>
+            )}
+          </View>
+        )}
       </ScrollView>
       <View style={styles.footer}>
         <View style={styles.totalRow}>
@@ -105,6 +138,11 @@ const styles = StyleSheet.create({
   qtyButtonText: { fontSize: 14, color: '#1A1A1A', fontWeight: '500' },
   qtyButtonTextSelected: { color: '#F0D080' },
   qtyTotal: { fontSize: 13, color: '#1A4A3A', fontWeight: '500', marginLeft: 4 },
+  breakdown: { margin: 24, padding: 16, backgroundColor: '#EEE8D0', borderRadius: 12 },
+  breakdownTitle: { fontSize: 14, fontWeight: '500', color: '#1A4A3A', marginBottom: 12 },
+  breakdownRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+  breakdownLabel: { fontSize: 14, color: '#6B7B6E' },
+  breakdownValue: { fontSize: 14, color: '#1A1A1A', fontWeight: '500' },
   footer: { padding: 24, borderTopWidth: 1, borderTopColor: '#EEE8D0' },
   totalRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 },
   totalLabel: { fontSize: 16, color: '#6B7B6E' },

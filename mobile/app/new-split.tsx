@@ -20,6 +20,19 @@ export default function NewSplitScreen() {
     return result.base64;
   };
 
+  const navigateToItems = (data) => {
+    const items = data.items && data.items.length > 0
+      ? data.items
+      : [{ name: 'Could not read receipt', price: 0.00, quantity: 1 }];
+    const tax = data.tax || 0;
+    const tip = data.tip || 0;
+    console.log('Navigating with tax:', tax, 'tip:', tip);
+    router.push({
+      pathname: '/select-items',
+      params: { items: JSON.stringify(items), tax: tax.toString(), tip: tip.toString() },
+    });
+  };
+
   const scanReceipt = async (uri) => {
     try {
       setLoading(true);
@@ -30,10 +43,7 @@ export default function NewSplitScreen() {
         body: JSON.stringify({ image: base64 }),
       });
       const data = await response.json();
-      const items = data.items && data.items.length > 0
-        ? data.items
-        : [{ name: 'Could not read receipt', price: 0.00 }];
-      router.push({ pathname: '/select-items', params: { items: JSON.stringify(items) } });
+      navigateToItems(data);
     } catch (error) {
       Alert.alert('Error', 'Could not connect to server');
     } finally {
@@ -54,10 +64,7 @@ export default function NewSplitScreen() {
         body: JSON.stringify({ url: receiptUrl }),
       });
       const data = await response.json();
-      const items = data.items && data.items.length > 0
-        ? data.items
-        : [{ name: 'Could not read receipt', price: 0.00 }];
-      router.push({ pathname: '/select-items', params: { items: JSON.stringify(items) } });
+      navigateToItems(data);
     } catch (error) {
       Alert.alert('Error', 'Could not connect to server');
     } finally {
