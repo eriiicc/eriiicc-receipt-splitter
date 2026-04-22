@@ -20,18 +20,17 @@ export default function NewSplitScreen() {
     return result.base64;
   };
 
-  const navigateToItems = (data) => {
+ const navigateToItems = (data) => {
     const items = data.items && data.items.length > 0
       ? data.items
       : [{ name: 'Could not read receipt', price: 0.00, quantity: 1 }];
     const tax = data.tax || 0;
     const tip = data.tip || 0;
     const restaurantName = data.restaurantName || '';
-    console.log('Navigating with tax:', tax, 'tip:', tip);
-    console.log('Restaurant name from backend:', data.restaurantName);
+    const sessionId = Date.now().toString();
     router.push({
       pathname: '/select-items',
-      params: { items: JSON.stringify(items), tax: tax.toString(), tip: tip.toString(), restaurantName },
+      params: { items: JSON.stringify(items), tax: tax.toString(), tip: tip.toString(), restaurantName, sessionId },
     });
   };
 

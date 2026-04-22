@@ -4,18 +4,19 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import BackButton from '../components/BackButton';
 
 export default function SelectItemsScreen() {
-  const { items, tax, tip, restaurantName } = useLocalSearchParams();
-  console.log('Restaurant name received:', restaurantName);
+  const { items, tax, tip, restaurantName, sessionId, isGuest } = useLocalSearchParams();
   const router = useRouter();
 
   const parsed = JSON.parse(items as string);
   const taxAmount = parseFloat(tax as string) || 0;
   const tipAmount = parseFloat(tip as string) || 0;
+  const session = sessionId as string;
 
   const [itemList, setItemList] = useState(
     parsed.map((item: any) => ({
       ...item,
       quantity: item.quantity || 1,
+      available: item.available !== undefined ? item.available : (item.quantity || 1),
       selectedQty: 0,
     }))
   );
@@ -44,13 +45,57 @@ export default function SelectItemsScreen() {
     return (getSubtotal() + getProportionalShare(taxAmount) + getProportionalShare(tipAmount)).toFixed(2);
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     const selected = itemList.filter((i: any) => i.selectedQty > 0);
     if (selected.length === 0) {
       Alert.alert('Select at least one item');
       return;
     }
-    router.push({ pathname: '/payment', params: { total: getTotal(), items: JSON.stringify(selected) } });
+
+    if (session) {
+      try {
+        const selections = itemList
+          .map((item: any, index: number) => ({ itemIndex: index, qty: item.selectedQty }))
+          .filter((s: any) => s.qty > 0);
+
+        await fetch(`http://192.168.0.170:3000/api/session/${session}/claim`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ selections, claimedBy: isGuest ? 'guest' : 'host' }),
+        });
+      } catch (error) {
+        console.log('Could not save claims:', error);
+      }
+    }
+
+    if (isGuest === 'true') {
+      router.push({ pathname: '/payment', params: { total: getTotal(), items: JSON.stringify(selected) } });
+    } else {
+      Alert.alert(
+        'What would you like to do?',
+        '',
+        [
+          {
+            text: 'Invite others to split',
+            onPress: () => router.push({
+              pathname: '/invite',
+              params: {
+                items: JSON.stringify(itemList),
+                tax: taxAmount.toString(),
+                tip: tipAmount.toString(),
+                restaurantName: restaurantName as string,
+                sessionId: session,
+              },
+            }),
+          },
+          {
+            text: 'Pay my share',
+            onPress: () => router.push({ pathname: '/payment', params: { total: getTotal(), items: JSON.stringify(selected) } }),
+          },
+          { text: 'Cancel' },
+        ]
+      );
+    }
   };
 
   return (
@@ -62,31 +107,41 @@ export default function SelectItemsScreen() {
       ) : null}
       <Text style={styles.subtitle}>Choose how many of each you ordered</Text>
       <ScrollView style={styles.list}>
-        {itemList.map((item: any, index: number) => (
-          <View key={index} style={[styles.item, index % 2 === 0 ? styles.itemEven : styles.itemOdd]}>
-            <View style={styles.itemTop}>
-              <Text style={styles.itemName}>{item.name}</Text>
-              <Text style={styles.itemPrice}>${item.price.toFixed(2)} each</Text>
-            </View>
-            <View style={styles.qtyRow}>
-              <Text style={styles.qtyLabel}>Qty:</Text>
-              {Array.from({ length: item.quantity + 1 }, (_, q) => (
-                <TouchableOpacity
-                  key={q}
-                  style={[styles.qtyButton, item.selectedQty === q && styles.qtyButtonSelected]}
-                  onPress={() => setQty(index, q)}
-                >
-                  <Text style={[styles.qtyButtonText, item.selectedQty === q && styles.qtyButtonTextSelected]}>
-                    {q}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-              {item.selectedQty > 0 && (
-                <Text style={styles.qtyTotal}>= ${(item.price * item.selectedQty).toFixed(2)}</Text>
+        {itemList.map((item: any, index: number) => {
+          const isClaimed = item.available === 0;
+          return (
+            <View key={index} style={[styles.item, index % 2 === 0 ? styles.itemEven : styles.itemOdd, isClaimed && styles.itemClaimed]}>
+              <View style={styles.itemTop}>
+                <Text style={[styles.itemName, isClaimed && styles.itemNameClaimed]}>{item.name}</Text>
+                <Text style={styles.itemPrice}>${item.price.toFixed(2)} each</Text>
+              </View>
+              {isClaimed ? (
+                <Text style={styles.claimedLabel}>Already claimed</Text>
+              ) : (
+                <View style={styles.qtyRow}>
+                  <Text style={styles.qtyLabel}>Qty:</Text>
+                  {Array.from({ length: item.available + 1 }, (_, q) => (
+                    <TouchableOpacity
+                      key={q}
+                      style={[styles.qtyButton, item.selectedQty === q && styles.qtyButtonSelected]}
+                      onPress={() => setQty(index, q)}
+                    >
+                      <Text style={[styles.qtyButtonText, item.selectedQty === q && styles.qtyButtonTextSelected]}>
+                        {q}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                  {item.available < item.quantity && (
+                    <Text style={styles.availableLabel}>{item.available} of {item.quantity} left</Text>
+                  )}
+                  {item.selectedQty > 0 && (
+                    <Text style={styles.qtyTotal}>= ${(item.price * item.selectedQty).toFixed(2)}</Text>
+                  )}
+                </View>
               )}
             </View>
-          </View>
-        ))}
+          );
+        })}
 
         {getSubtotal() > 0 && (taxAmount > 0 || tipAmount > 0) && (
           <View style={styles.breakdown}>
@@ -125,23 +180,26 @@ export default function SelectItemsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F2EDE0', paddingTop: 130 },
-  title: { fontSize: 28, fontWeight: '600', color: '#1A4A3A', marginBottom: 8, paddingHorizontal: 24 },
+  title: { fontSize: 28, fontWeight: '600', color: '#1A4A3A', marginBottom: 4, paddingHorizontal: 24 },
+  restaurantName: { fontSize: 24, fontWeight: '600', color: '#26705A', paddingHorizontal: 24, marginBottom: 4 },
   subtitle: { fontSize: 15, color: '#6B7B6E', marginBottom: 24, paddingHorizontal: 24 },
   list: { flex: 1 },
-    restaurantName: { fontSize: 18, fontWeight: '500', color: '#26705A', paddingHorizontal: 24, marginBottom: 4 },
-
   item: { paddingVertical: 14, paddingHorizontal: 24, borderBottomWidth: 1, borderBottomColor: '#EEE8D0' },
   itemEven: { backgroundColor: '#F2EDE0' },
   itemOdd: { backgroundColor: '#EEE8D0' },
+  itemClaimed: { opacity: 0.4 },
   itemTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   itemName: { fontSize: 15, color: '#1A1A1A', fontWeight: '500', flex: 1, marginRight: 8 },
+  itemNameClaimed: { textDecorationLine: 'line-through' },
   itemPrice: { fontSize: 13, color: '#6B7B6E' },
+  claimedLabel: { fontSize: 13, color: '#6B7B6E', fontStyle: 'italic' },
   qtyRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   qtyLabel: { fontSize: 13, color: '#6B7B6E', marginRight: 4 },
   qtyButton: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: '#EEE8D0', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' },
   qtyButtonSelected: { backgroundColor: '#1A4A3A', borderColor: '#1A4A3A' },
   qtyButtonText: { fontSize: 14, color: '#1A1A1A', fontWeight: '500' },
   qtyButtonTextSelected: { color: '#F0D080' },
+  availableLabel: { fontSize: 12, color: '#E8923A', fontWeight: '500' },
   qtyTotal: { fontSize: 13, color: '#1A4A3A', fontWeight: '500', marginLeft: 4 },
   breakdown: { margin: 24, padding: 16, backgroundColor: '#EEE8D0', borderRadius: 12 },
   breakdownTitle: { fontSize: 14, fontWeight: '500', color: '#1A4A3A', marginBottom: 12 },

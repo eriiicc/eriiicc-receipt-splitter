@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const { createSession, getSession, claimItems, getClaims } = require('./db/index');
 require('dotenv').config();
 
 const app = express();
@@ -42,11 +43,14 @@ app.post('/api/scan-receipt', async (req, res) => {
 
 app.post('/api/send-invite', async (req, res) => {
   try {
-    const { phoneNumber, senderName, sessionId } = req.body;
+    const { phoneNumber, senderName, sessionId, items, tax, tip, restaurantName, guestLink } = req.body;
+    createSession(sessionId, restaurantName, items, tax, tip);
     console.log('[MOCK SMS] To:', phoneNumber);
-    console.log('[MOCK SMS] Message:', senderName, 'is splitting a bill with you! Session:', sessionId);
+    console.log('[MOCK SMS] Message:', senderName, 'is splitting a bill with you!');
+    console.log('[MOCK SMS] Guest link:', guestLink);
     res.json({ success: true, messageId: 'mock-' + Date.now() });
   } catch (error) {
+    console.log('Invite error:', error.message);
     res.status(500).json({ error: error.message });
   }
 });
@@ -74,6 +78,38 @@ res.json({ items, tax, tip, restaurantName });
     res.status(500).json({ error: error.message });
   } finally {
     if (browser) await browser.close();
+  }
+});
+
+app.get('/api/session/:id', (req, res) => {
+  try {
+    const session = getSession(req.params.id);
+    if (!session) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+    const claims = getClaims(req.params.id);
+    const claimedMap = {};
+    for (const claim of claims) {
+      claimedMap[claim.item_index] = (claimedMap[claim.item_index] || 0) + claim.quantity_claimed;
+    }
+    const itemsWithAvailability = session.items.map((item, index) => ({
+      ...item,
+      claimed: claimedMap[index] || 0,
+      available: item.quantity - (claimedMap[index] || 0),
+    }));
+    res.json({ ...session, items: itemsWithAvailability });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/session/:id/claim', (req, res) => {
+  try {
+    const { selections, claimedBy } = req.body;
+    claimItems(req.params.id, selections, claimedBy || 'guest');
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 

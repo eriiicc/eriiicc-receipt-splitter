@@ -10,6 +10,7 @@ export default function RootLayout() {
       <Stack.Screen name="select-items" options={{ headerShown: false }} />
       <Stack.Screen name="invite" options={{ headerShown: false }} />
       <Stack.Screen name="payment" options={{ headerShown: false }} />
+      <Stack.Screen name="guest" options={{ headerShown: false }} />
     </Stack>
   );
 }
