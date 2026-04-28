@@ -58,7 +58,7 @@ export default function SelectItemsScreen() {
           .map((item: any, index: number) => ({ itemIndex: index, qty: item.selectedQty }))
           .filter((s: any) => s.qty > 0);
 
-        await fetch(`http://192.168.0.170:3000/api/session/${session}/claim`, {
+        await fetch(`https://eriiicc-receipt-splitter-production.up.railway.app`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ selections, claimedBy: isGuest ? 'guest' : 'host' }),

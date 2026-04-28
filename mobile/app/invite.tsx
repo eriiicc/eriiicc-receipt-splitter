@@ -69,7 +69,7 @@ const openContacts = async () => {
       setSending(true);
       const sessionId = Date.now().toString();
       for (const guest of guests) {
-        await fetch('http://192.168.0.170:3000/api/send-invite', {
+        await fetch('https://eriiicc-receipt-splitter-production.up.railway.app/api/send-invite', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

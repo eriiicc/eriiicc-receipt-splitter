@@ -15,41 +15,33 @@ app.get('/', (req, res) => {
 });
 
 app.post('/api/scan-receipt-url', async (req, res) => {
-  let browser = null;
   try {
     const { url } = req.body;
-    console.log('Fetching receipt URL:', url);
-    
-    let text = '';
-    try {
-      const puppeteer = require('puppeteer');
-      browser = await puppeteer.launch({
-        headless: 'new',
-        args: ['--no-sandbox', '--disable-setuid-sandbox'],
-      });
-      const page = await browser.newPage();
-      await page.setUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15');
-      await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      text = await page.evaluate(() => document.body.innerText);
-      console.log('Page text (first 500 chars):', text.substring(0, 500));
-    } catch (puppeteerError) {
-      console.log('Puppeteer not available, falling back to fetch:', puppeteerError.message);
-      const response = await fetch(url, {
-        headers: { 'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15' }
-      });
-      text = await response.text();
-      text = text.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
-    }
+    console.log('Fetching receipt URL via ScraperAPI:', url);
 
+    const scraperUrl = `http://api.scraperapi.com?api_key=${process.env.SCRAPER_API_KEY}&url=${encodeURIComponent(url)}&render=true`;
+    
+    const response = await fetch(scraperUrl, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15' }
+    });
+    
+    const html = await response.text();
+    const text = html
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/\s+/g, '\n')
+      .trim();
+    
+    console.log('Cleaned text (first 500):', text.substring(0, 500));
     const { items, tax, tip, restaurantName } = parseReceiptText(text);
     console.log('Found items:', items.length, 'Tax:', tax, 'Tip:', tip);
     res.json({ items, tax, tip, restaurantName });
   } catch (error) {
     console.log('URL scan error:', error.message);
     res.status(500).json({ error: error.message });
-  } finally {
-    if (browser) await browser.close();
   }
 });
 

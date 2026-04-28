@@ -38,7 +38,7 @@ export default function NewSplitScreen() {
     try {
       setLoading(true);
       const base64 = await convertToJpeg(uri);
-      const response = await fetch('http://192.168.0.170:3000/api/scan-receipt', {
+      const response = await fetch('https://eriiicc-receipt-splitter-production.up.railway.app/api/scan-receipt', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ image: base64 }),
@@ -59,7 +59,7 @@ export default function NewSplitScreen() {
     }
     try {
       setLoading(true);
-      const response = await fetch('http://192.168.0.170:3000/api/scan-receipt-url', {
+      const response = await fetch('https://eriiicc-receipt-splitter-production.up.railway.app/api/scan-receipt-url', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: receiptUrl }),
