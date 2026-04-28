@@ -25,15 +25,24 @@ app.post('/api/scan-receipt-url', async (req, res) => {
       headers: { 'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15' }
     });
     
-    const html = await response.text();
+  const html = await response.text();
     const text = html
       .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
       .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-      .replace(/<[^>]+>/g, ' ')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/p>/gi, '\n')
+      .replace(/<\/div>/gi, '\n')
+      .replace(/<\/tr>/gi, '\n')
+      .replace(/<\/td>/gi, ' ')
+      .replace(/<[^>]+>/g, '')
       .replace(/&amp;/g, '&')
       .replace(/&nbsp;/g, ' ')
-      .replace(/\s+/g, '\n')
-      .trim();
+      .replace(/&#[0-9]+;/g, ' ')
+      .replace(/[ \t]+/g, ' ')
+      .split('\n')
+      .map(l => l.trim())
+      .filter(l => l.length > 0)
+      .join('\n');
     
     console.log('Cleaned text (first 500):', text.substring(0, 500));
     const { items, tax, tip, restaurantName } = parseReceiptText(text);
