@@ -11,11 +11,11 @@ export default function NewSplitScreen() {
   const [receiptUrl, setReceiptUrl] = useState('');
   const router = useRouter();
 
-  const convertToJpeg = async (uri) => {
+ const convertToJpeg = async (uri) => {
     const result = await ImageManipulator.manipulateAsync(
       uri,
-      [{ resize: { width: 1200 } }],
-      { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG, base64: true }
+      [{ resize: { width: 500 } }],
+      { compress: 0.2, format: ImageManipulator.SaveFormat.JPEG, base64: true }
     );
     return result.base64;
   };
@@ -38,6 +38,8 @@ export default function NewSplitScreen() {
     try {
       setLoading(true);
       const base64 = await convertToJpeg(uri);
+      console.log('Image size after conversion:', base64.length);
+      console.log('Sending to Railway...');
       const response = await fetch('https://eriiicc-receipt-splitter-production.up.railway.app/api/scan-receipt', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -59,7 +61,7 @@ export default function NewSplitScreen() {
     }
     try {
       setLoading(true);
-      const response = await fetch('https://eriiicc-receipt-splitter-production.up.railway.app/api/scan-receipt-url', {
+      const response = await fetch('https://eriiicc-receipt-splitter-production.up.railway.app', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: receiptUrl }),
