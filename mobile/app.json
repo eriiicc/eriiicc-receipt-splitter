@@ -29,7 +29,9 @@
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.READ_MEDIA_IMAGES",
-        "android.permission.READ_CONTACTS"
+        "android.permission.READ_CONTACTS",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.WRITE_CONTACTS"
       ]
     },
     "web": {
@@ -39,17 +41,17 @@
     "plugins": [
       "expo-router",
       [
-  "expo-camera",
-  {
-    "cameraPermission": "Settled needs camera access to scan receipts and QR codes."
-  }
-],
-[
-  "expo-barcode-scanner",
-  {
-    "cameraPermission": "Settled needs camera access to scan QR codes on receipts."
-  }
-],
+        "expo-camera",
+        {
+          "cameraPermission": "Settled needs camera access to scan receipts and QR codes."
+        }
+      ],
+      [
+        "expo-barcode-scanner",
+        {
+          "cameraPermission": "Settled needs camera access to scan QR codes on receipts."
+        }
+      ],
       [
         "expo-contacts",
         {
@@ -81,6 +83,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "2d6ad5e7-a1a6-4a93-a039-b8d7344c4807"
+      }
     }
   }
 }
