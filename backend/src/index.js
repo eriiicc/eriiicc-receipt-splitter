@@ -158,6 +158,9 @@ function parseReceiptText(text) {
       /^[0-9]{3}-[0-9]{3}/,
       /^[tn]$/i, /regular price/i, /% off/i,
       /new bal/i, /cannot be/i, /^\d+$/,
+      /@ \$/i,
+      /^\d+ @/i,
+      /ea$/i,
     ];
     return skipPatterns.some(p => p.test(line));
   };
@@ -187,7 +190,7 @@ function parseReceiptText(text) {
     if (priceMatch) {
       const price = parseFloat(priceMatch[1]);
       const name = line.replace(/\$?\d+\.\d{2}/, '').trim();
-      const cleanName = name.replace(/^\d{6,}\s*/, '').replace(/^\d{3}-\d{3}-\d{3}-\d{3}-\d{3}\s*/, '').trim();
+      const cleanName = name.replace(/^\d{5,}\s*/, '').replace(/^\d{3}-\d{3}-\d{3}-\d{3}-\d{3}\s*/, '').trim();
       const qtyMatch = cleanName.match(/^([1-9]\d?)\s+(.+)/);
       if (cleanName.length > 2 && price > 0 && price < 500 && !skipLine(cleanName)) {
         if (qtyMatch) {
@@ -206,7 +209,7 @@ function parseReceiptText(text) {
     if (nextPriceMatch && !skipLine(nextLine)) {
       const price = parseFloat(nextPriceMatch[1]);
       const name = line.replace(/\$?\d+\.\d{2}/, '').trim();
-      const cleanName = name.replace(/^\d{6,}\s*/, '').replace(/^\d{3}-\d{3}-\d{3}-\d{3}-\d{3}\s*/, '').trim();
+      const cleanName = name.replace(/^\d{5,}\s*/, '').replace(/^\d{3}-\d{3}-\d{3}-\d{3}-\d{3}\s*/, '').trim();
       const qtyMatch2 = cleanName.match(/^([1-9]\d?)\s+(.+)/);
       if (cleanName.length > 2 && price > 0 && price < 500 && !skipLine(cleanName)) {
         if (qtyMatch2) {
