@@ -1,114 +1,52 @@
 const fs = require('fs');
 const path = require('path');
 
-const appDir = path.join(__dirname, '..', 'mobile', 'app');
+const privacy = `<!DOCTYPE html>
+<html>
+<head><title>Settled - Privacy Policy</title>
+<style>body{font-family:sans-serif;max-width:800px;margin:40px auto;padding:0 24px;color:#1a1a1a;}</style>
+</head>
+<body>
+<h1>Privacy Policy</h1>
+<p>Last updated: April 2026</p>
+<h2>Information We Collect</h2>
+<p>Settled collects phone numbers you provide when inviting others to split a bill. We do not store payment information. Receipt data is processed temporarily to extract line items and is not permanently stored.</p>
+<h2>How We Use Your Information</h2>
+<p>Phone numbers are used solely to send bill split invitations via SMS. We do not sell or share your information with third parties for marketing purposes.</p>
+<h2>SMS Communications</h2>
+<p>By using Settled, you consent to receive SMS messages when a friend invites you to split a bill. Message and data rates may apply. Reply STOP to opt out.</p>
+<h2>Data Retention</h2>
+<p>Bill split session data is retained for 30 days then deleted automatically.</p>
+<h2>Contact</h2>
+<p>For privacy questions, contact us at privacy@settled.app</p>
+</body>
+</html>`;
 
-const settingsScreen = `import { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import BackButton from '../components/BackButton';
+const terms = `<!DOCTYPE html>
+<html>
+<head><title>Settled - Terms of Service</title>
+<style>body{font-family:sans-serif;max-width:800px;margin:40px auto;padding:0 24px;color:#1a1a1a;}</style>
+</head>
+<body>
+<h1>Terms of Service</h1>
+<p>Last updated: April 2026</p>
+<h2>Acceptance of Terms</h2>
+<p>By using Settled, you agree to these terms. If you do not agree, do not use the app.</p>
+<h2>Description of Service</h2>
+<p>Settled is a mobile application that helps users split bills and receipts among groups. The app facilitates payment requests but does not process payments directly.</p>
+<h2>User Responsibilities</h2>
+<p>Users are responsible for ensuring they have permission to share others' phone numbers. Users must only invite people who have consented to receive SMS messages from them.</p>
+<h2>SMS Messaging</h2>
+<p>Settled sends SMS messages on behalf of users to their invited contacts. Message and data rates may apply. Recipients can opt out by replying STOP.</p>
+<h2>Payments</h2>
+<p>Settled facilitates connections to third-party payment services (Venmo, Cash App, Zelle). We are not responsible for payment disputes or transaction failures.</p>
+<h2>Limitation of Liability</h2>
+<p>Settled is provided as-is. We are not liable for any damages arising from use of the service.</p>
+<h2>Contact</h2>
+<p>For questions, contact us at support@settled.app</p>
+</body>
+</html>`;
 
-export default function SettingsScreen() {
-  const [venmo, setVenmo] = useState('');
-  const [cashapp, setCashapp] = useState('');
-  const [zelle, setZelle] = useState('');
-  const [saving, setSaving] = useState(false);
-  const router = useRouter();
-
-  useEffect(() => {
-    AsyncStorage.getItem('paymentInfo').then(val => {
-      if (val) {
-        const info = JSON.parse(val);
-        setVenmo(info.venmo || '');
-        setCashapp(info.cashapp || '');
-        setZelle(info.zelle || '');
-      }
-    });
-  }, []);
-
-  const save = async () => {
-    try {
-      setSaving(true);
-      await AsyncStorage.setItem('paymentInfo', JSON.stringify({ venmo, cashapp, zelle }));
-      Alert.alert('Saved!', 'Your payment info has been updated.');
-    } catch (error) {
-      Alert.alert('Error', 'Could not save settings');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <BackButton />
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>Payment Settings</Text>
-        <Text style={styles.subtitle}>Enter your payment details so guests can pay you back</Text>
-
-        <View style={styles.field}>
-          <Text style={styles.label}>Venmo username</Text>
-          <Text style={styles.hint}>Found in your Venmo profile (without the @)</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="your-venmo-username"
-            placeholderTextColor="#6B7B6E"
-            value={venmo}
-            onChangeText={setVenmo}
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-        </View>
-
-        <View style={styles.field}>
-          <Text style={styles.label}>Cash App cashtag</Text>
-          <Text style={styles.hint}>Include the $ sign (e.g. $yourcashtag)</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="$yourcashtag"
-            placeholderTextColor="#6B7B6E"
-            value={cashapp}
-            onChangeText={setCashapp}
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-        </View>
-
-        <View style={styles.field}>
-          <Text style={styles.label}>Zelle email or phone</Text>
-          <Text style={styles.hint}>The email or phone number linked to your Zelle account</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="email@example.com or 5551234567"
-            placeholderTextColor="#6B7B6E"
-            value={zelle}
-            onChangeText={setZelle}
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-        </View>
-
-        <TouchableOpacity style={[styles.button, saving && styles.buttonDisabled]} onPress={save} disabled={saving}>
-          <Text style={styles.buttonText}>{saving ? 'Saving...' : 'Save settings'}</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </KeyboardAvoidingView>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F2EDE0' },
-  scroll: { padding: 24, paddingTop: 120, paddingBottom: 60 },
-  title: { fontSize: 28, fontWeight: '600', color: '#1A4A3A', marginBottom: 8 },
-  subtitle: { fontSize: 15, color: '#6B7B6E', marginBottom: 32, lineHeight: 22 },
-  field: { marginBottom: 24 },
-  label: { fontSize: 15, fontWeight: '500', color: '#1A4A3A', marginBottom: 4 },
-  hint: { fontSize: 13, color: '#6B7B6E', marginBottom: 8 },
-  input: { width: '100%', height: 50, borderWidth: 1, borderColor: '#EEE8D0', borderRadius: 10, paddingHorizontal: 16, fontSize: 16, backgroundColor: '#fff', color: '#1A1A1A' },
-  button: { backgroundColor: '#1A4A3A', padding: 16, borderRadius: 10, alignItems: 'center', marginTop: 8 },
-  buttonDisabled: { backgroundColor: '#6B7B6E' },
-  buttonText: { color: '#F0D080', fontSize: 16, fontWeight: '500' },
-});`;
-
-fs.writeFileSync(path.join(appDir, 'settings.tsx'), settingsScreen);
-console.log('Done!');
+fs.writeFileSync(path.join(__dirname, '..', 'legal', 'privacy.html'), privacy);
+fs.writeFileSync(path.join(__dirname, '..', 'legal', 'terms.html'), terms);
+console.log('Done! Legal pages created.');
