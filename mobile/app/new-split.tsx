@@ -21,17 +21,24 @@ export default function NewSplitScreen() {
   };
 
  const navigateToItems = (data) => {
-    const items = data.items && data.items.length > 0
-      ? data.items
-      : [{ name: 'Could not read receipt', price: 0.00, quantity: 1 }];
-    const tax = data.tax || 0;
-    const tip = data.tip || 0;
-    const restaurantName = data.restaurantName || '';
-    const sessionId = Date.now().toString();
-    router.push({
-      pathname: '/select-items',
-      params: { items: JSON.stringify(items), tax: tax.toString(), tip: tip.toString(), restaurantName, sessionId },
-    });
+    try {
+      console.log('Data received:', JSON.stringify(data).substring(0, 200));
+      const items = data.items && data.items.length > 0
+        ? data.items
+        : [{ name: 'Could not read receipt', price: 0.00, quantity: 1 }];
+      const tax = data.tax || 0;
+      const tip = data.tip || 0;
+      const restaurantName = data.restaurantName || '';
+      const sessionId = Date.now().toString();
+      console.log('Navigating with items:', items.length, 'tax:', tax, 'tip:', tip);
+      router.push({
+        pathname: '/select-items',
+        params: { items: JSON.stringify(items), tax: tax.toString(), tip: tip.toString(), restaurantName, sessionId },
+      });
+    } catch (error) {
+      console.log('Navigation error:', error.message);
+      Alert.alert('Error', error.message);
+    }
   };
 
   const scanReceipt = async (uri) => {
@@ -39,7 +46,6 @@ export default function NewSplitScreen() {
       setLoading(true);
       const base64 = await convertToJpeg(uri);
       console.log('Image size after conversion:', base64.length);
-      console.log('Sending to Railway...');
       const response = await fetch('https://eriiicc-receipt-splitter-production.up.railway.app/api/scan-receipt', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

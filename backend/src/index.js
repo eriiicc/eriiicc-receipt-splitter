@@ -1,8 +1,8 @@
 const express = require('express');
 const cors = require('cors');
+const fetch = require('node-fetch');
 require('dotenv').config();
 const { init, createSession, getSession, claimItems, getClaims } = require('./db/index');
-const fetch = require('node-fetch');
 
 init();
 
@@ -33,11 +33,11 @@ app.post('/api/scan-receipt', async (req, res) => {
       }
     );
     console.log('Vision API status:', response.status);
-   const data = await response.json();
-console.log('Full Vision response:', JSON.stringify(data).substring(0, 500));
-const text = data.responses?.[0]?.fullTextAnnotation?.text || '';
-console.log('Extracted text:', text.substring(0, 200));
-console.log('Error if any:', JSON.stringify(data.responses?.[0]?.error));
+    const data = await response.json();
+    console.log('Full Vision response:', JSON.stringify(data).substring(0, 500));
+    const text = data.responses?.[0]?.fullTextAnnotation?.text || '';
+    console.log('Extracted text:', text.substring(0, 200));
+    console.log('Error if any:', JSON.stringify(data.responses?.[0]?.error));
     const { items, tax, tip, restaurantName } = parseReceiptText(text);
     res.json({ items, tax, tip, restaurantName });
   } catch (error) {
@@ -187,14 +187,15 @@ function parseReceiptText(text) {
     if (priceMatch) {
       const price = parseFloat(priceMatch[1]);
       const name = line.replace(/\$?\d+\.\d{2}/, '').trim();
-      const qtyMatch = name.match(/^(\d+)\s+(.+)/);
-      if (name.length > 2 && price > 0 && price < 500 && !skipLine(name)) {
+      const cleanName = name.replace(/^\d{6,}\s*/, '').replace(/^\d{3}-\d{3}-\d{3}-\d{3}-\d{3}\s*/, '').trim();
+      const qtyMatch = cleanName.match(/^([1-9]\d?)\s+(.+)/);
+      if (cleanName.length > 2 && price > 0 && price < 500 && !skipLine(cleanName)) {
         if (qtyMatch) {
           const qty = parseInt(qtyMatch[1]);
           const itemName = qtyMatch[2];
           items.push({ name: itemName, price: price / qty, quantity: qty });
         } else {
-          items.push({ name, price, quantity: 1 });
+          items.push({ name: cleanName, price, quantity: 1 });
         }
       }
       continue;
@@ -205,14 +206,15 @@ function parseReceiptText(text) {
     if (nextPriceMatch && !skipLine(nextLine)) {
       const price = parseFloat(nextPriceMatch[1]);
       const name = line.replace(/\$?\d+\.\d{2}/, '').trim();
-      const qtyMatch2 = name.match(/^(\d+)\s+(.+)/);
-      if (name.length > 2 && price > 0 && price < 500 && !skipLine(name)) {
+      const cleanName = name.replace(/^\d{6,}\s*/, '').replace(/^\d{3}-\d{3}-\d{3}-\d{3}-\d{3}\s*/, '').trim();
+      const qtyMatch2 = cleanName.match(/^([1-9]\d?)\s+(.+)/);
+      if (cleanName.length > 2 && price > 0 && price < 500 && !skipLine(cleanName)) {
         if (qtyMatch2) {
           const qty = parseInt(qtyMatch2[1]);
           const itemName = qtyMatch2[2];
           items.push({ name: itemName, price: price / qty, quantity: qty });
         } else {
-          items.push({ name, price, quantity: 1 });
+          items.push({ name: cleanName, price, quantity: 1 });
         }
         i++;
       }
