@@ -32,10 +32,11 @@ app.post('/api/scan-receipt', async (req, res) => {
       }
     );
     console.log('Vision API status:', response.status);
-    const data = await response.json();
-    const text = data.responses?.[0]?.fullTextAnnotation?.text || '';
-    console.log('Extracted text:', text.substring(0, 200));
-    console.log('Error if any:', JSON.stringify(data.responses?.[0]?.error));
+   const data = await response.json();
+console.log('Full Vision response:', JSON.stringify(data).substring(0, 500));
+const text = data.responses?.[0]?.fullTextAnnotation?.text || '';
+console.log('Extracted text:', text.substring(0, 200));
+console.log('Error if any:', JSON.stringify(data.responses?.[0]?.error));
     const { items, tax, tip, restaurantName } = parseReceiptText(text);
     res.json({ items, tax, tip, restaurantName });
   } catch (error) {
