@@ -20,6 +20,7 @@ app.post('/api/scan-receipt', async (req, res) => {
   try {
     const { image } = req.body;
     const cleanImage = image.replace(/^data:image\/\w+;base64,/, '').replace(/\s/g, '');
+    console.log('First 20 chars of image:', cleanImage.substring(0, 20));
     const response = await fetch(
       `https://vision.googleapis.com/v1/images:annotate?key=${process.env.GOOGLE_VISION_API_KEY}`,
       {
