@@ -224,4 +224,5 @@ function parseReceiptText(text) {
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
   console.log('Version: 2.0 - all routes loaded');
+  console.log('Vision key starts:', process.env.GOOGLE_VISION_API_KEY?.substring(0, 15));
 });
