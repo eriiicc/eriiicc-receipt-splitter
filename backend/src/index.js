@@ -1,8 +1,9 @@
 const express = require('express');
 const cors = require('cors');
-const { init, createSession, getSession, claimItems, getClaims } = require('./db/index');
-init();
 require('dotenv').config();
+const { init, createSession, getSession, claimItems, getClaims } = require('./db/index');
+
+init();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -41,8 +42,16 @@ app.post('/api/scan-receipt', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-    
-  const html = await response.text();
+
+app.post('/api/scan-receipt-url', async (req, res) => {
+  try {
+    const { url } = req.body;
+    console.log('Fetching receipt URL via ScraperAPI:', url);
+    const scraperUrl = `http://api.scraperapi.com?api_key=${process.env.SCRAPER_API_KEY}&url=${encodeURIComponent(url)}&render=true`;
+    const response = await fetch(scraperUrl, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15' }
+    });
+    const html = await response.text();
     const text = html
       .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
       .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
@@ -60,7 +69,6 @@ app.post('/api/scan-receipt', async (req, res) => {
       .map(l => l.trim())
       .filter(l => l.length > 0)
       .join('\n');
-    
     console.log('Cleaned text (first 500):', text.substring(0, 500));
     const { items, tax, tip, restaurantName } = parseReceiptText(text);
     console.log('Found items:', items.length, 'Tax:', tax, 'Tip:', tip);
@@ -82,32 +90,6 @@ app.post('/api/send-invite', async (req, res) => {
   } catch (error) {
     console.log('Invite error:', error.message);
     res.status(500).json({ error: error.message });
-  }
-});
-
-app.post('/api/scan-receipt-url', async (req, res) => {
-  let browser = null;
-  try {
-    const { url } = req.body;
-    console.log('Fetching receipt URL with Puppeteer:', url);
-    const puppeteer = require('puppeteer');
-    browser = await puppeteer.launch({
-      headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    });
-    const page = await browser.newPage();
-    await page.setUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15');
-    await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    const text = await page.evaluate(() => document.body.innerText);
-    console.log('Page text (first 500 chars):', text.substring(0, 500));
-  const { items, tax, tip, restaurantName } = parseReceiptText(text);
-res.json({ items, tax, tip, restaurantName });
-  } catch (error) {
-    console.log('Puppeteer error:', error.message);
-    res.status(500).json({ error: error.message });
-  } finally {
-    if (browser) await browser.close();
   }
 });
 
@@ -145,19 +127,20 @@ app.post('/api/session/:id/claim', async (req, res) => {
 
 function parseReceiptText(text) {
   const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-  let restaurantName = '';
-  for (let i = 0; i < Math.min(3, lines.length); i++) {
-    const line = lines[i];
-    if (line.length > 2 && !/^\d/.test(line) && !/^http/i.test(line)) {
-      restaurantName = line;
-      break;
-    }
-  }
-  console.log('Restaurant name found:', restaurantName);
   const items = [];
   const priceRegex = /\$?(\d+\.\d{2})/;
   let tax = 0;
   let tip = 0;
+  let restaurantName = '';
+
+  for (let i = 0; i < Math.min(5, lines.length); i++) {
+    const line = lines[i];
+    const cleaned = line.replace(/^your receipt for /i, '').trim();
+    if (cleaned.length > 2 && !/^\d/.test(cleaned) && !/^http/i.test(cleaned) && !/^your receipt/i.test(cleaned)) {
+      restaurantName = cleaned;
+      break;
+    }
+  }
 
   const skipLine = (line) => {
     const skipPatterns = [
