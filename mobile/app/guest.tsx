@@ -10,7 +10,7 @@ export default function GuestScreen() {
   const continueAsGuest = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`https://eriiicc-receipt-splitter-production.up.railway.app/api/session/${sessionId}`);
+      const response = await fetch(`http://https://eriiicc-receipt-splitter-production.up.railway.app`);
       const data = await response.json();
       if (data.error) {
         router.push({ pathname: '/select-items', params: { items: JSON.stringify([]), tax: '0', tip: '0', restaurantName: '' } });

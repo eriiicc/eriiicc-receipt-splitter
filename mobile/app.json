@@ -39,11 +39,17 @@
     "plugins": [
       "expo-router",
       [
-        "expo-camera",
-        {
-          "cameraPermission": "Settled needs camera access to scan receipts."
-        }
-      ],
+  "expo-camera",
+  {
+    "cameraPermission": "Settled needs camera access to scan receipts and QR codes."
+  }
+],
+[
+  "expo-barcode-scanner",
+  {
+    "cameraPermission": "Settled needs camera access to scan QR codes on receipts."
+  }
+],
       [
         "expo-contacts",
         {
@@ -69,7 +75,8 @@
           }
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-barcode-scanner"
     ],
     "experiments": {
       "typedRoutes": true,

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, Image, ActivityIndicator, TextInput, ScrollView } from 'react-native';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
+import { CameraView, Camera } from 'expo-camera';
 import { useRouter } from 'expo-router';
 import BackButton from '../components/BackButton';
 
@@ -9,9 +10,10 @@ export default function NewSplitScreen() {
   const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false);
   const [receiptUrl, setReceiptUrl] = useState('');
+  const [showScanner, setShowScanner] = useState(false);
   const router = useRouter();
 
- const convertToJpeg = async (uri) => {
+  const convertToJpeg = async (uri) => {
     const result = await ImageManipulator.manipulateAsync(
       uri,
       [{ resize: { width: 500 } }],
@@ -20,9 +22,8 @@ export default function NewSplitScreen() {
     return result.base64;
   };
 
- const navigateToItems = (data) => {
+  const navigateToItems = (data) => {
     try {
-      console.log('Data received:', JSON.stringify(data).substring(0, 200));
       const items = data.items && data.items.length > 0
         ? data.items
         : [{ name: 'Could not read receipt', price: 0.00, quantity: 1 }];
@@ -30,13 +31,11 @@ export default function NewSplitScreen() {
       const tip = data.tip || 0;
       const restaurantName = data.restaurantName || '';
       const sessionId = Date.now().toString();
-      console.log('Navigating with items:', items.length, 'tax:', tax, 'tip:', tip);
       router.push({
         pathname: '/select-items',
         params: { items: JSON.stringify(items), tax: tax.toString(), tip: tip.toString(), restaurantName, sessionId },
       });
     } catch (error) {
-      console.log('Navigation error:', error.message);
       Alert.alert('Error', error.message);
     }
   };
@@ -45,7 +44,6 @@ export default function NewSplitScreen() {
     try {
       setLoading(true);
       const base64 = await convertToJpeg(uri);
-      console.log('Image size after conversion:', base64.length);
       const response = await fetch('https://eriiicc-receipt-splitter-production.up.railway.app/api/scan-receipt', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -54,28 +52,28 @@ export default function NewSplitScreen() {
       const data = await response.json();
       navigateToItems(data);
     } catch (error) {
-      Alert.alert('Error', 'Could not connect to server');
+      Alert.alert('Error', error.message || 'Could not connect to server');
     } finally {
       setLoading(false);
     }
   };
 
-  const scanReceiptUrl = async () => {
-    if (!receiptUrl.startsWith('http')) {
+  const scanUrl = async (urlToScan) => {
+    if (!urlToScan || !urlToScan.startsWith('http')) {
       Alert.alert('Please enter a valid URL');
       return;
     }
     try {
       setLoading(true);
-      const response = await fetch('https://eriiicc-receipt-splitter-production.up.railway.app', {
+      const response = await fetch('https://eriiicc-receipt-splitter-production.up.railway.app/api/scan-receipt-url', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: receiptUrl }),
+        body: JSON.stringify({ url: urlToScan }),
       });
       const data = await response.json();
       navigateToItems(data);
     } catch (error) {
-      Alert.alert('Error', 'Could not connect to server');
+      Alert.alert('Error', error.message || 'Could not connect to server');
     } finally {
       setLoading(false);
     }
@@ -93,14 +91,29 @@ export default function NewSplitScreen() {
     if (!result.canceled) { setImage(result.assets[0].uri); scanReceipt(result.assets[0].uri); }
   };
 
+  const handleQRScan = async () => {
+    const { status } = await Camera.requestCameraPermissionsAsync();
+    if (status !== 'granted') { Alert.alert('Permission needed', 'Please allow camera access'); return; }
+    setShowScanner(true);
+  };
+
+  const handleBarCodeScanned = ({ data }) => {
+    setShowScanner(false);
+    if (data.startsWith('http')) {
+      setReceiptUrl(data);
+      Alert.alert('QR Code detected!', 'Receipt URL found.', [
+        { text: 'Scan now', onPress: () => scanUrl(data) },
+        { text: 'OK' }
+      ]);
+    } else {
+      Alert.alert('Not a receipt QR code', 'This QR code does not contain a receipt URL');
+    }
+  };
+
   return (
     <View style={styles.container}>
       <BackButton />
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
-      >
+      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         <Text style={styles.title}>New Split</Text>
         <Text style={styles.subtitle}>Upload a receipt to get started</Text>
         {image && <Image source={{ uri: image }} style={styles.preview} />}
@@ -123,12 +136,11 @@ export default function NewSplitScreen() {
                 autoCapitalize="none"
                 keyboardType="url"
               />
-              <TouchableOpacity
-                style={[styles.button, !receiptUrl && styles.buttonDisabled]}
-                onPress={scanReceiptUrl}
-                disabled={!receiptUrl}
-              >
+              <TouchableOpacity style={[styles.button, !receiptUrl && styles.buttonDisabled]} onPress={() => scanUrl(receiptUrl)} disabled={!receiptUrl}>
                 <Text style={styles.buttonText}>Scan Receipt Link</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.buttonOutline} onPress={handleQRScan}>
+                <Text style={styles.buttonOutlineText}>📷 Scan QR Code</Text>
               </TouchableOpacity>
             </View>
             <View style={styles.dividerRow}>
@@ -150,6 +162,19 @@ export default function NewSplitScreen() {
           </>
         )}
       </ScrollView>
+      {showScanner && (
+        <View style={styles.scannerContainer}>
+          <CameraView
+            style={styles.scanner}
+            facing="back"
+            onBarcodeScanned={handleBarCodeScanned}
+            barcodeScannerSettings={{ barcodeTypes: ['qr', 'pdf417'] }}
+          />
+          <TouchableOpacity style={styles.cancelButton} onPress={() => setShowScanner(false)}>
+            <Text style={styles.cancelButtonText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }
@@ -166,13 +191,17 @@ const styles = StyleSheet.create({
   sectionLabel: { fontSize: 15, fontWeight: '500', color: '#1A4A3A', marginBottom: 6 },
   sectionHint: { fontSize: 13, color: '#6B7B6E', marginBottom: 12 },
   buttonGroup: { gap: 10 },
-  button: { backgroundColor: '#1A4A3A', padding: 16, borderRadius: 10, alignItems: 'center', width: '100%' },
+  button: { backgroundColor: '#1A4A3A', padding: 16, borderRadius: 10, alignItems: 'center', width: '100%', marginBottom: 10 },
   buttonDisabled: { backgroundColor: '#6B7B6E' },
-  buttonOutline: { borderWidth: 1, borderColor: '#1A4A3A', padding: 16, borderRadius: 10, alignItems: 'center', width: '100%' },
+  buttonOutline: { borderWidth: 1, borderColor: '#1A4A3A', padding: 16, borderRadius: 10, alignItems: 'center', width: '100%', marginBottom: 10 },
   buttonText: { color: '#F0D080', fontSize: 16, fontWeight: '500' },
   buttonOutlineText: { color: '#1A4A3A', fontSize: 16, fontWeight: '500' },
   dividerRow: { flexDirection: 'row', alignItems: 'center', width: '100%', marginVertical: 24 },
   dividerLine: { flex: 1, height: 1, backgroundColor: '#EEE8D0' },
   dividerText: { marginHorizontal: 12, fontSize: 14, color: '#6B7B6E' },
   input: { width: '100%', height: 50, borderWidth: 1, borderColor: '#EEE8D0', borderRadius: 10, paddingHorizontal: 16, fontSize: 14, marginBottom: 12, backgroundColor: '#fff', color: '#1A1A1A' },
+  scannerContainer: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#000', zIndex: 100 },
+  scanner: { flex: 1 },
+  cancelButton: { position: 'absolute', bottom: 40, alignSelf: 'center', backgroundColor: '#1A4A3A', paddingHorizontal: 32, paddingVertical: 16, borderRadius: 10 },
+  cancelButtonText: { color: '#F0D080', fontSize: 16, fontWeight: '500' },
 });
