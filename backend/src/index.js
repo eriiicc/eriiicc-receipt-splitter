@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 const { init, createSession, getSession, claimItems, getClaims } = require('./db/index');
+const fetch = require('node-fetch');
 
 init();
 
