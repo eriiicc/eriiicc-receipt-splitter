@@ -14,16 +14,33 @@ app.get('/', (req, res) => {
   res.json({ message: 'Receipt splitter API is running!' });
 });
 
-app.post('/api/scan-receipt-url', async (req, res) => {
+app.post('/api/scan-receipt', async (req, res) => {
+  console.log('Request received, image size:', req.body.image?.length);
   try {
-    const { url } = req.body;
-    console.log('Fetching receipt URL via ScraperAPI:', url);
-
-    const scraperUrl = `http://api.scraperapi.com?api_key=${process.env.SCRAPER_API_KEY}&url=${encodeURIComponent(url)}&render=true`;
-    
-    const response = await fetch(scraperUrl, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15' }
-    });
+    const { image } = req.body;
+    const cleanImage = image.replace(/^data:image\/\w+;base64,/, '').replace(/\s/g, '');
+    const response = await fetch(
+      `https://vision.googleapis.com/v1/images:annotate?key=${process.env.GOOGLE_VISION_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requests: [{ image: { content: cleanImage }, features: [{ type: 'TEXT_DETECTION' }] }],
+        }),
+      }
+    );
+    console.log('Vision API status:', response.status);
+    const data = await response.json();
+    const text = data.responses?.[0]?.fullTextAnnotation?.text || '';
+    console.log('Extracted text:', text.substring(0, 200));
+    console.log('Error if any:', JSON.stringify(data.responses?.[0]?.error));
+    const { items, tax, tip, restaurantName } = parseReceiptText(text);
+    res.json({ items, tax, tip, restaurantName });
+  } catch (error) {
+    console.log('Caught error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
     
   const html = await response.text();
     const text = html
