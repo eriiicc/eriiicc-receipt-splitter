@@ -1,9 +1,4 @@
-const fs = require('fs');
-const path = require('path');
-
-const appDir = path.join(__dirname, '..', 'mobile', 'app');
-
-const settingsScreen = `import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -108,7 +103,4 @@ const styles = StyleSheet.create({
   button: { backgroundColor: '#1A4A3A', padding: 16, borderRadius: 10, alignItems: 'center', marginTop: 8 },
   buttonDisabled: { backgroundColor: '#6B7B6E' },
   buttonText: { color: '#F0D080', fontSize: 16, fontWeight: '500' },
-});`;
-
-fs.writeFileSync(path.join(appDir, 'settings.tsx'), settingsScreen);
-console.log('Done!');
+});
