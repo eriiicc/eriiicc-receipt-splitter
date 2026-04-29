@@ -221,4 +221,5 @@ function parseReceiptText(text) {
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
+  console.log('Version: 2.0 - all routes loaded');
 });
