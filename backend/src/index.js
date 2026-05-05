@@ -128,6 +128,16 @@ app.post('/api/session/:id/claim', async (req, res) => {
   }
 });
 
+app.get('/api/sessions', async (req, res) => {
+  try {
+    const db = require('./db/index');
+    const sessions = await db.getAllSessions();
+    res.json({ sessions });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 function parseReceiptText(text) {
   const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
   const items = [];
