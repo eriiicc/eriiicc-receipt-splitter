@@ -35,17 +35,6 @@ const handleContinue = () => {
     router.push('/verify');
     setLoading(false);
   };
-const { auth } = await import('../firebaseConfig');
-      const formatted = '+1' + phone;
-      const confirmation = await auth().signInWithPhoneNumber(formatted);
-      router.push({ pathname: '/verify', params: { confirmationId: confirmation.verificationId } });
-    } catch (error: any) {
-      console.log('Full error:', JSON.stringify(error));
-      Alert.alert('Error', error.message || 'Could not send code');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
