@@ -29,11 +29,22 @@ const redirectUri = AuthSession.makeRedirectUri({
     }
   }, [response]);
 
-  const handleContinue = () => {
+const handleContinue = () => {
     if (phone.length < 10) { Alert.alert('Please enter a valid phone number'); return; }
     setLoading(true);
     router.push('/verify');
     setLoading(false);
+  };
+const { auth } = await import('../firebaseConfig');
+      const formatted = '+1' + phone;
+      const confirmation = await auth().signInWithPhoneNumber(formatted);
+      router.push({ pathname: '/verify', params: { confirmationId: confirmation.verificationId } });
+    } catch (error: any) {
+      console.log('Full error:', JSON.stringify(error));
+      Alert.alert('Error', error.message || 'Could not send code');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

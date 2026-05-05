@@ -10,6 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
+      "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
         "NSCameraUsageDescription": "Settled needs camera access to scan receipts.",
         "NSPhotoLibraryUsageDescription": "Settled needs photo library access to upload receipts.",
@@ -74,7 +75,8 @@
         }
       ],
       "expo-web-browser",
-      "expo-barcode-scanner"
+      "@react-native-firebase/app",
+      "@react-native-firebase/auth"
     ],
     "experiments": {
       "typedRoutes": true,

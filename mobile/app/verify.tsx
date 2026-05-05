@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import BackButton from '../components/BackButton';
 
 export default function VerifyScreen() {
+  const { confirmationId } = useLocalSearchParams();
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleVerify = () => {
+
+const handleVerify = () => {
     if (code.length < 6) { Alert.alert('Please enter the 6 digit code'); return; }
     if (code !== '123456') { Alert.alert('Incorrect code', 'Please try again'); return; }
     setLoading(true);
