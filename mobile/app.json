@@ -13,8 +13,10 @@
       "infoPlist": {
         "NSCameraUsageDescription": "Settled needs camera access to scan receipts.",
         "NSPhotoLibraryUsageDescription": "Settled needs photo library access to upload receipts.",
-        "NSContactsUsageDescription": "Settled needs contacts access to invite people to split bills."
-      }
+        "NSContactsUsageDescription": "Settled needs contacts access to invite people to split bills.",
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "bundleIdentifier": "com.ericgr.settled"
     },
     "android": {
       "adaptiveIcon": {
@@ -44,12 +46,6 @@
         "expo-camera",
         {
           "cameraPermission": "Settled needs camera access to scan receipts and QR codes."
-        }
-      ],
-      [
-        "expo-barcode-scanner",
-        {
-          "cameraPermission": "Settled needs camera access to scan QR codes on receipts."
         }
       ],
       [
