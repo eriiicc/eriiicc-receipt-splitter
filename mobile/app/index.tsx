@@ -1,39 +1,35 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
-import * as Google from 'expo-auth-session/providers/google';
-import { useEffect } from 'react';
-import * as AuthSession from 'expo-auth-session';
-
-WebBrowser.maybeCompleteAuthSession();
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 
 export default function LoginScreen() {
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-const redirectUri = AuthSession.makeRedirectUri({
-    useProxy: true,
-  });
-
- const [request, response, promptAsync] = Google.useAuthRequest({
-    webClientId: '351911635604-f8t6ufpcnim75cmv9du4jkh1h5o5p931.apps.googleusercontent.com',
-    iosClientId: '351911635604-hin3a2jgn1hc0ltjqpurn34c4rstit4k.apps.googleusercontent.com',
-    redirectUri: 'https://auth.expo.io/@ericgr/settled',
-  });
-
   useEffect(() => {
-    if (response?.type === 'success') {
-      router.replace('/home');
-    }
-  }, [response]);
+    GoogleSignin.configure({
+      iosClientId: '351911635604-hin3a2jgn1hc0ltjqpurn34c4rstit4k.apps.googleusercontent.com',
+    });
+  }, []);
 
-const handleContinue = () => {
+  const handleContinue = () => {
     if (phone.length < 10) { Alert.alert('Please enter a valid phone number'); return; }
     setLoading(true);
     router.push('/verify');
     setLoading(false);
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      await GoogleSignin.hasPlayServices();
+      const userInfo = await GoogleSignin.signIn();
+      router.replace('/home');
+    } catch (error: any) {
+      if (error.code === statusCodes.SIGN_IN_CANCELLED) return;
+      Alert.alert('Error', error.message || 'Google sign in failed');
+    }
   };
 
   return (
@@ -64,11 +60,7 @@ const handleContinue = () => {
         <View style={styles.dividerLine} />
       </View>
 
-      <TouchableOpacity
-        style={styles.googleButton}
-        onPress={() => promptAsync()}
-        disabled={!request}
-      >
+      <TouchableOpacity style={styles.googleButton} onPress={handleGoogleSignIn}>
         <Text style={styles.googleButtonText}>Continue with Google</Text>
       </TouchableOpacity>
     </KeyboardAvoidingView>

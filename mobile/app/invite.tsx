@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform, FlatList, Modal } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Contacts from 'expo-contacts';
 import BackButton from '../components/BackButton';
@@ -18,20 +19,46 @@ export default function InviteScreen() {
 const openContacts = async () => {
     setContacts([]);
     setSearchQuery('');
+
     const { status } = await Contacts.requestPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Please allow contacts access');
+    
+    if (status === 'granted') {
+      const { data } = await Contacts.getContactsAsync({
+        fields: [Contacts.Fields.PhoneNumbers, Contacts.Fields.Name, Contacts.Fields.Emails],
+        sort: Contacts.SortTypes.FirstName,
+      });
+      const withPhones = data
+        .filter(c => c.phoneNumbers && c.phoneNumbers.length > 0)
+        .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      setContacts(withPhones);
+      setShowContacts(true);
       return;
     }
-    const { data } = await Contacts.getContactsAsync({
-      fields: [Contacts.Fields.PhoneNumbers, Contacts.Fields.Name],
-    });
-    const withPhones = data
-      .filter(c => c.phoneNumbers && c.phoneNumbers.length > 0)
-      .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-    console.log('Contacts loaded:', withPhones.length);
-    setContacts(withPhones);
-    setShowContacts(true);
+
+    Alert.alert(
+      'Import from Contacts',
+      'Settled needs contacts access to help you invite people. Your contacts are never stored.',
+      [
+        { text: 'Continue', onPress: async () => {
+            const { status: newStatus } = await Contacts.requestPermissionsAsync();
+            if (newStatus !== 'granted') {
+              Alert.alert('Permission needed', 'Go to Settings → Privacy → Contacts to allow access');
+              return;
+            }
+            const { data } = await Contacts.getContactsAsync({
+              fields: [Contacts.Fields.PhoneNumbers, Contacts.Fields.Name, Contacts.Fields.Emails],
+              sort: Contacts.SortTypes.FirstName,
+            });
+            const withPhones = data
+              .filter(c => c.phoneNumbers && c.phoneNumbers.length > 0)
+              .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+            setContacts(withPhones);
+            setShowContacts(true);
+          }
+        },
+        { text: 'Cancel' }
+      ]
+    );
   };
 
  const selectContact = (contact) => {

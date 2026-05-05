@@ -71,12 +71,12 @@ export default function SelectItemsScreen() {
     if (isGuest === 'true') {
      router.push({ pathname: '/payment', params: { total: getTotal(), items: JSON.stringify(selected), restaurantName: restaurantName as string } });
     } else {
-      Alert.alert(
-        'What would you like to do?',
-        '',
+   Alert.alert(
+        `Your items: $${getTotal()}`,
+        `Items claimed! Now invite your friend(s) to select what they ordered.`,
         [
           {
-            text: 'Invite others to split',
+            text: '👥 Invite others',
             onPress: () => router.push({
               pathname: '/invite',
               params: {
@@ -88,13 +88,10 @@ export default function SelectItemsScreen() {
               },
             }),
           },
-          {
-            text: 'Pay my share',
-            onPress: () => router.push({ pathname: '/payment', params: { total: getTotal(), items: JSON.stringify(selected), restaurantName: restaurantName as string } }),
-          },
+          { text: 'Done', onPress: () => router.replace('/home') },
           { text: 'Cancel' },
         ]
-      );
+);
     }
   };
 
@@ -110,7 +107,7 @@ export default function SelectItemsScreen() {
         {itemList.map((item: any, index: number) => {
           const isClaimed = item.available === 0;
           return (
-            <View key={index} style={[styles.item, index % 2 === 0 ? styles.itemEven : styles.itemOdd, isClaimed && styles.itemClaimed]}>
+            <View key={index} style={[styles.item, index % 2 === 0 ? styles.itemEven : styles.itemOdd, isClaimed && styles.itemClaimed, item.selectedQty > 0 && !isClaimed && styles.itemSelected]}>
               <View style={styles.itemTop}>
                 <Text style={[styles.itemName, isClaimed && styles.itemNameClaimed]}>{item.name}</Text>
                 <Text style={styles.itemPrice}>${item.price.toFixed(2)} each</Text>
@@ -171,7 +168,7 @@ export default function SelectItemsScreen() {
           <Text style={styles.totalAmount}>${getTotal()}</Text>
         </View>
         <TouchableOpacity style={styles.button} onPress={handleConfirm}>
-          <Text style={styles.buttonText}>Confirm selection</Text>
+          <Text style={styles.buttonText}>Claim my items</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -188,6 +185,7 @@ const styles = StyleSheet.create({
   itemEven: { backgroundColor: '#F2EDE0' },
   itemOdd: { backgroundColor: '#EEE8D0' },
   itemClaimed: { opacity: 0.4 },
+  itemSelected: { opacity: 0.6, borderLeftWidth: 3, borderLeftColor: '#1A4A3A' },
   itemTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   itemName: { fontSize: 15, color: '#1A1A1A', fontWeight: '500', flex: 1, marginRight: 8 },
   itemNameClaimed: { textDecorationLine: 'line-through' },

@@ -58,6 +58,12 @@
         }
       ],
       [
+  "@react-native-google-signin/google-signin",
+  {
+    "iosUrlScheme": "com.googleusercontent.apps.351911635604-hin3a2jgn1hc0ltjqpurn34c4rstit4k"
+  }
+],
+      [
         "expo-contacts",
         {
           "contactsPermission": "Settled needs contacts access to invite people to split bills."
@@ -82,7 +88,8 @@
           }
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      "@react-native-google-signin/google-signin"
     ],
     "experiments": {
       "typedRoutes": true,
