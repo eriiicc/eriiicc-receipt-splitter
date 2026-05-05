@@ -38,15 +38,15 @@ export default function HomeScreen() {
         </TouchableOpacity>
       )}
 
-      <Text style={styles.subtitle}>No splits yet — start one below</Text>
+     <Text style={styles.subtitle}>Start a new split below</Text>
       <TouchableOpacity style={styles.button} onPress={() => router.push('/new-split')}>
         <Text style={styles.buttonText}>+ New Split</Text>
-        <TouchableOpacity style={styles.historyButton} onPress={() => router.push('/history')}>
-        <Text style={styles.historyButtonText}>View Split History</Text>
-      </TouchableOpacity>
       </TouchableOpacity>
       <TouchableOpacity style={styles.testButton} onPress={() => router.push({ pathname: '/guest', params: { sessionId: '123' } })}>
         <Text style={styles.testButtonText}>Test Guest View</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.historyButton} onPress={() => router.push('/history')}>
+        <Text style={styles.historyButtonText}>View Split History</Text>
       </TouchableOpacity>
     </View>
   );
@@ -58,6 +58,8 @@ const styles = StyleSheet.create({
   title: { fontSize: 32, fontWeight: '600', color: '#1A4A3A' },
   settingsButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#EEE8D0', alignItems: 'center', justifyContent: 'center' },
   settingsIcon: { fontSize: 20 },
+  historyButton: { marginTop: 12, padding: 16, borderRadius: 10, borderWidth: 1, borderColor: '#1A4A3A', alignItems: 'center' },
+  historyButtonText: { color: '#6B7B6E', fontSize: 15 },
   setupBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1A4A3A', borderRadius: 12, padding: 16, marginBottom: 24, gap: 12 },
   setupBannerEmoji: { fontSize: 24 },
   setupBannerText: { flex: 1 },
