@@ -5,7 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import BackButton from '../components/BackButton';
 
 export default function PaymentScreen() {
-  const { total } = useLocalSearchParams();
+ const { total, restaurantName } = useLocalSearchParams();
   const amount = parseFloat(total as string).toFixed(2);
   const router = useRouter();
   const [venmo, setVenmo] = useState('');
@@ -21,11 +21,12 @@ export default function PaymentScreen() {
     });
   }, []);
 
-  const openVenmo = () => {
-    const venmoUrl = `venmo://paycharge?txn=pay&recipients=${venmo}&amount=${amount}&note=Receipt+split`;
+const openVenmo = () => {
+    const note = restaurantName ? `Settled - ${restaurantName}` : 'Receipt+split';
+    const venmoUrl = `venmo://paycharge?txn=pay&recipients=${venmo}&amount=${amount}&note=${encodeURIComponent(note)}`;
     Linking.canOpenURL(venmoUrl).then(supported => {
       if (supported) { Linking.openURL(venmoUrl); }
-      else { Linking.openURL(`https://venmo.com/${venmo}?txn=pay&amount=${amount}&note=Receipt+split`); }
+      else { Linking.openURL(`https://venmo.com/${venmo}?txn=pay&amount=${amount}&note=${encodeURIComponent(note)}`); }
     });
   };
 

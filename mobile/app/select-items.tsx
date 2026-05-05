@@ -69,7 +69,7 @@ export default function SelectItemsScreen() {
     }
 
     if (isGuest === 'true') {
-      router.push({ pathname: '/payment', params: { total: getTotal(), items: JSON.stringify(selected) } });
+     router.push({ pathname: '/payment', params: { total: getTotal(), items: JSON.stringify(selected), restaurantName: restaurantName as string } });
     } else {
       Alert.alert(
         'What would you like to do?',
@@ -90,7 +90,7 @@ export default function SelectItemsScreen() {
           },
           {
             text: 'Pay my share',
-            onPress: () => router.push({ pathname: '/payment', params: { total: getTotal(), items: JSON.stringify(selected) } }),
+            onPress: () => router.push({ pathname: '/payment', params: { total: getTotal(), items: JSON.stringify(selected), restaurantName: restaurantName as string } }),
           },
           { text: 'Cancel' },
         ]
