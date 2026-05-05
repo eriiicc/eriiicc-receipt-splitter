@@ -41,6 +41,9 @@ export default function HomeScreen() {
       <Text style={styles.subtitle}>No splits yet — start one below</Text>
       <TouchableOpacity style={styles.button} onPress={() => router.push('/new-split')}>
         <Text style={styles.buttonText}>+ New Split</Text>
+        <TouchableOpacity style={styles.historyButton} onPress={() => router.push('/history')}>
+        <Text style={styles.historyButtonText}>View Split History</Text>
+      </TouchableOpacity>
       </TouchableOpacity>
       <TouchableOpacity style={styles.testButton} onPress={() => router.push({ pathname: '/guest', params: { sessionId: '123' } })}>
         <Text style={styles.testButtonText}>Test Guest View</Text>

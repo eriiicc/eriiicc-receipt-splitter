@@ -1,9 +1,4 @@
-const fs = require('fs');
-const path = require('path');
-
-const appDir = path.join(__dirname, '..', 'mobile', 'app');
-
-const historyScreen = `import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import BackButton from '../components/BackButton';
@@ -59,7 +54,7 @@ export default function HistoryScreen() {
                 <Text style={styles.cardDate}>{formatDate(session.createdAt)}</Text>
               </View>
               <View style={styles.cardRight}>
-                <Text style={styles.cardTotal}>\${getTotal(session.items).toFixed(2)}</Text>
+                <Text style={styles.cardTotal}>${getTotal(session.items).toFixed(2)}</Text>
                 <Text style={styles.cardItems}>{session.items?.length || 0} items</Text>
               </View>
             </TouchableOpacity>
@@ -87,7 +82,4 @@ const styles = StyleSheet.create({
   cardRight: { alignItems: 'flex-end' },
   cardTotal: { fontSize: 18, fontWeight: '600', color: '#1A4A3A', marginBottom: 2 },
   cardItems: { fontSize: 13, color: '#6B7B6E' },
-});`;
-
-fs.writeFileSync(path.join(appDir, 'history.tsx'), historyScreen);
-console.log('Done! history.tsx created.');
+});
