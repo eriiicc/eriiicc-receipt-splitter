@@ -86,12 +86,22 @@ app.post('/api/send-invite', async (req, res) => {
   try {
     const { phoneNumber, senderName, sessionId, items, tax, tip, restaurantName, guestLink } = req.body;
     await createSession(sessionId, restaurantName, items, tax, tip);
-    console.log('[MOCK SMS] To:', phoneNumber);
-    console.log('[MOCK SMS] Message:', senderName, 'is splitting a bill with you!');
-    console.log('[MOCK SMS] Guest link:', guestLink);
-    res.json({ success: true, messageId: 'mock-' + Date.now() });
+    
+    const client = require('twilio')(
+      process.env.TWILIO_ACCOUNT_SID,
+      process.env.TWILIO_AUTH_TOKEN
+    );
+
+    const message = await client.messages.create({
+      body: `${senderName} invited you to split a bill${restaurantName ? ' at ' + restaurantName : ''}! Select your items: ${guestLink}`,
+      from: process.env.TWILIO_PHONE_NUMBER,
+      to: phoneNumber,
+    });
+
+    console.log('SMS sent to:', phoneNumber, 'SID:', message.sid);
+    res.json({ success: true, messageId: message.sid });
   } catch (error) {
-    console.log('Invite error:', error.message);
+    console.log('SMS error:', error.message);
     res.status(500).json({ error: error.message });
   }
 });
