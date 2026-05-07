@@ -5,6 +5,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Contacts from 'expo-contacts';
 import BackButton from '../components/BackButton';
+import { useRef, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function InviteScreen() {
   const [phone, setPhone] = useState('');
@@ -15,6 +17,13 @@ export default function InviteScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const router = useRouter();
   const { items, tax, tip, restaurantName } = useLocalSearchParams();
+  const paymentInfoRef = useRef({});
+  
+  useEffect(() => {
+    AsyncStorage.getItem('paymentInfo').then(val => {
+      if (val) paymentInfoRef.current = JSON.parse(val);
+    });
+  }, []);
 
 const openContacts = async () => {
     setContacts([]);
@@ -99,7 +108,7 @@ const openContacts = async () => {
         await fetch('https://eriiicc-receipt-splitter-production.up.railway.app/api/send-invite', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+         body: JSON.stringify({
             phoneNumber: guest.phone,
             senderName: 'Your friend',
             sessionId,
@@ -107,7 +116,8 @@ const openContacts = async () => {
             tax: parseFloat(tax as string) || 0,
             tip: parseFloat(tip as string) || 0,
             restaurantName: restaurantName as string,
-            guestLink: `settled://guest?sessionId=${sessionId}`,
+            guestLink: `https://eriiicc-receipt-splitter-production.up.railway.app/guest?session=${sessionId}`,
+            paymentInfo: paymentInfoRef.current,
           }),
         });
       }

@@ -24,11 +24,12 @@ const init = () => {
   }
 };
 
-const createSession = async (id, restaurantName, items, tax, tip) => {
+const createSession = async (id, restaurantName, items, tax, tip, paymentInfo) => {
   const db = readDb();
-  db.sessions[id] = { id, restaurantName, items, tax, tip, createdAt: Date.now() };
+  db.sessions[id] = { id, restaurantName, items, tax, tip, paymentInfo: paymentInfo || {}, createdAt: Date.now() };
   writeDb(db);
 };
+
 
 const getSession = async (id) => {
   const db = readDb();
