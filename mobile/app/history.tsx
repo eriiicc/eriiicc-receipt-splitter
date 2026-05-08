@@ -8,6 +8,12 @@ export default function HistoryScreen() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
+  const formatDate = (timestamp) => {
+    return new Date(parseInt(timestamp)).toLocaleDateString('en-US', {
+      month: 'short', day: 'numeric', year: 'numeric'
+    });
+  };
+
 useEffect(() => {
     console.log('Fetching sessions...');
     fetch('https://eriiicc-receipt-splitter-production.up.railway.app/api/sessions')
