@@ -100,4 +100,9 @@ const getAllSessions = async () => {
   return sessions;
 };
 
-module.exports = { init, createSession, getSession, claimItems, getClaims, getAllSessions };
+const deleteSession = async (id) => {
+  await pool.query('DELETE FROM sessions WHERE id = $1', [id]);
+  await pool.query('DELETE FROM claims WHERE session_id = $1', [id]);
+};
+
+module.exports = { init, createSession, getSession, claimItems, getClaims, getAllSessions, deleteSession };

@@ -2,8 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const fetch = require('node-fetch');
 require('dotenv').config();
-const { init, createSession, getSession, claimItems, getClaims, getAllSessions } = require('./db/index');
-
+const { init, createSession, getSession, claimItems, getClaims, getAllSessions, deleteSession } = require('./db/index');
 init();
 
 const app = express();
@@ -456,6 +455,15 @@ app.post('/api/session/:id/save', async (req, res) => {
       await claimItems(id, selections, claimedBy || 'host');
     }
     
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/session/:id', async (req, res) => {
+  try {
+    await deleteSession(req.params.id);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
