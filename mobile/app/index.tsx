@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform, Keyboard, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 
@@ -34,41 +34,44 @@ export default function LoginScreen() {
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <Text style={styles.title}>Settled</Text>
-      <Text style={styles.subtitle}>Split bills. Get settled.</Text>
+      <Pressable style={styles.inner} onPress={Keyboard.dismiss}>
+        <Text style={styles.title}>Settled</Text>
+        <Text style={styles.subtitle}>Split bills. Get settled.</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="(555) 555-5555"
-        keyboardType="phone-pad"
-        value={phone}
-        onChangeText={setPhone}
-        maxLength={10}
-        placeholderTextColor="#6B7B6E"
-      />
-      <TouchableOpacity
-        style={loading ? styles.buttonDisabled : styles.button}
-        onPress={handleContinue}
-        disabled={loading}
-      >
-        <Text style={styles.buttonText}>{loading ? 'Sending...' : 'Continue with phone'}</Text>
-      </TouchableOpacity>
+        <TextInput
+          style={styles.input}
+          placeholder="(555) 555-5555"
+          keyboardType="phone-pad"
+          value={phone}
+          onChangeText={setPhone}
+          maxLength={10}
+          placeholderTextColor="#6B7B6E"
+        />
+        <TouchableOpacity
+          style={loading ? styles.buttonDisabled : styles.button}
+          onPress={handleContinue}
+          disabled={loading}
+        >
+          <Text style={styles.buttonText}>{loading ? 'Sending...' : 'Continue with phone'}</Text>
+        </TouchableOpacity>
 
-      <View style={styles.dividerRow}>
-        <View style={styles.dividerLine} />
-        <Text style={styles.dividerText}>or</Text>
-        <View style={styles.dividerLine} />
-      </View>
+        <View style={styles.dividerRow}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>or</Text>
+          <View style={styles.dividerLine} />
+        </View>
 
-      <TouchableOpacity style={styles.googleButton} onPress={handleGoogleSignIn}>
-        <Text style={styles.googleButtonText}>Continue with Google</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.googleButton} onPress={handleGoogleSignIn}>
+          <Text style={styles.googleButtonText}>Continue with Google</Text>
+        </TouchableOpacity>
+      </Pressable>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F2EDE0', alignItems: 'center', justifyContent: 'center', padding: 24, paddingBottom: 80 },
+  container: { flex: 1, backgroundColor: '#F2EDE0' },
+  inner: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, paddingBottom: 80 },
   title: { fontSize: 36, fontWeight: '600', marginBottom: 8, color: '#1A4A3A' },
   subtitle: { fontSize: 15, color: '#6B7B6E', marginBottom: 40, textAlign: 'center' },
   input: { width: '100%', height: 50, borderWidth: 1, borderColor: '#EEE8D0', borderRadius: 10, paddingHorizontal: 16, fontSize: 16, marginBottom: 16, backgroundColor: '#fff', color: '#1A1A1A' },
