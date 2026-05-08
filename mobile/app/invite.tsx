@@ -114,12 +114,13 @@ const openContacts = async () => {
             tax: parseFloat(tax as string) || 0,
             tip: parseFloat(tip as string) || 0,
             restaurantName: restaurantName as string,
-            guestLink: `https://api.imsettled.app/api/session/${sessionId}`,
+            guestLink: `https://api.imsettled.app/guest?session=${sessionId}`,
             paymentInfo: paymentInfoRef.current,
           }),
         });
       }
-      const guestLink = `https://api.imsettled.app/api/session/${sessionId}`;
+      
+      const guestLink = `https://api.imsettled.app/guest?session=${sessionId}`;
       Alert.alert(
         'Invites sent!',
         `Sent to ${guests.length} guest${guests.length > 1 ? 's' : ''}. Share the link to invite more people.`,
