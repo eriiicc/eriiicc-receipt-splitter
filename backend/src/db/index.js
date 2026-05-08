@@ -53,7 +53,6 @@ module.exports = { init, createSession, getSession, claimItems, getClaims };
 
 const getAllSessions = async () => {
   const db = readDb();
+  console.log('Total sessions in DB:', Object.keys(db.sessions).length);
   return Object.values(db.sessions).sort((a, b) => b.createdAt - a.createdAt);
 };
-
-module.exports = { init, createSession, getSession, claimItems, getClaims, getAllSessions };
