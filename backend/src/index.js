@@ -357,10 +357,12 @@ app.get('/guest', async (req, res) => {
           cashappBtn.style.display = 'block';
           cashappBtn.onclick = () => {
             const cashTag = info.cashapp.startsWith('$') ? info.cashapp : '$' + info.cashapp;
-            window.location.href = 'cashapp://cash.app/pay/' + cashTag;
-            setTimeout(() => {
-              window.location.href = 'https://cash.app/' + cashTag;
-            }, 500);
+            if (confirm('Send $' + total + ' to ' + cashTag + ' on Cash App?')) {
+              window.location.href = 'cashapp://cash.app/pay/' + cashTag;
+              setTimeout(() => {
+                window.location.href = 'https://cash.app/' + cashTag;
+              }, 500);
+            }
           };
         } else {
           cashappBtn.style.display = 'none';
