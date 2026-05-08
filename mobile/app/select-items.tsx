@@ -52,20 +52,26 @@ export default function SelectItemsScreen() {
       return;
     }
 
-    if (session) {
-      try {
-        const selections = itemList
-          .map((item: any, index: number) => ({ itemIndex: index, qty: item.selectedQty }))
-          .filter((s: any) => s.qty > 0);
+  try {
+      const selections = itemList
+        .map((item: any, index: number) => ({ itemIndex: index, qty: item.selectedQty }))
+        .filter((s: any) => s.qty > 0);
 
-        await fetch(`https://eriiicc-receipt-splitter-production.up.railway.app`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ selections, claimedBy: isGuest ? 'guest' : 'host' }),
-        });
-      } catch (error) {
-        console.log('Could not save claims:', error);
-      }
+      await fetch(`https://eriiicc-receipt-splitter-production.up.railway.app/api/session/${session || Date.now()}/save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          selections,
+          claimedBy: isGuest ? 'guest' : 'host',
+          items: itemList,
+          tax: taxAmount,
+          tip: tipAmount,
+          restaurantName: restaurantName as string,
+          sessionId: session || Date.now().toString(),
+        }),
+      });
+    } catch (error) {
+      console.log('Could not save session:', error);
     }
 
     if (isGuest === 'true') {

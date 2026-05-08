@@ -408,6 +408,26 @@ app.get('/api/session/:id/host-payment-info', async (req, res) => {
   }
 });
 
+app.post('/api/session/:id/save', async (req, res) => {
+  try {
+    const { selections, claimedBy, items, tax, tip, restaurantName, sessionId } = req.body;
+    const id = req.params.id;
+    
+    const existing = await getSession(id);
+    if (!existing) {
+      await createSession(id, restaurantName, items, tax, tip, {});
+    }
+    
+    if (selections && selections.length > 0) {
+      await claimItems(id, selections, claimedBy || 'host');
+    }
+    
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 function parseReceiptText(text) {
   const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
   const items = [];
