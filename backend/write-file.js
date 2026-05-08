@@ -1,157 +1,115 @@
 const fs = require('fs');
 const path = require('path');
 
-const appDir = path.join(__dirname, '..', 'mobile', 'app');
-
-const splitDetailScreen = `import { useState, useEffect } from 'react';
+const code = `import { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter } from 'expo-router';
 import BackButton from '../components/BackButton';
 
-export default function SplitDetailScreen() {
-  const { sessionId } = useLocalSearchParams();
-  const [session, setSession] = useState(null);
-  const [claims, setClaims] = useState([]);
+export default function HistoryScreen() {
+  const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    fetch(\`https://api.imsettled.app/api/sessions/api/session/\${sessionId}\`)
-      .then(r => r.json())
+    console.log('Fetching sessions...');
+    fetch('https://api.imsettled.app/api/sessions')
+      .then(r => {
+        console.log('Sessions response status:', r.status);
+        return r.json();
+      })
       .then(data => {
-        setSession(data);
+        console.log('Sessions data:', JSON.stringify(data).substring(0, 200));
+        setSessions(data.sessions || []);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(err => {
+        console.log('Sessions error:', err.message);
+        setLoading(false);
+      });
   }, []);
 
-  const getTotal = () => {
-    if (!session?.items) return 0;
-    return session.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  };
-
-  const getClaimedTotal = () => {
-    if (!session?.items) return 0;
-    return session.items.reduce((sum, item) => sum + item.price * (item.claimed || 0), 0);
-  };
-
   const formatDate = (timestamp) => {
-    return new Date(timestamp).toLocaleDateString('en-US', {
-      weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'
+    return new Date(parseInt(timestamp)).toLocaleDateString('en-US', {
+      month: 'short', day: 'numeric', year: 'numeric'
     });
   };
 
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        <BackButton />
-        <ActivityIndicator size="large" color="#1A4A3A" style={{ marginTop: 100 }} />
-      </View>
-    );
-  }
+  const isComplete = (items) => {
+    if (!items || items.length === 0) return false;
+    return items.every(item => item.available === 0);
+  };
 
-  if (!session) {
-    return (
-      <View style={styles.container}>
-        <BackButton />
-        <Text style={styles.error}>Session not found</Text>
-      </View>
-    );
-  }
+  const getTotal = (items) => {
+    if (!items) return 0;
+    return items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  };
 
   return (
     <View style={styles.container}>
       <BackButton />
-      <ScrollView>
-        <View style={styles.header}>
-          <Text style={styles.restaurant}>{session.restaurantName || 'Unknown restaurant'}</Text>
-          <Text style={styles.date}>{formatDate(session.createdAt)}</Text>
-        </View>
+      <Text style={styles.title}>Split History</Text>
+      <Text style={styles.subtitle}>Your past splits</Text>
 
-        <View style={styles.summaryRow}>
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryLabel}>Bill total</Text>
-            <Text style={styles.summaryAmount}>\${getTotal().toFixed(2)}</Text>
-          </View>
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryLabel}>Claimed</Text>
-            <Text style={[styles.summaryAmount, { color: '#26705A' }]}>\${getClaimedTotal().toFixed(2)}</Text>
-          </View>
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryLabel}>Remaining</Text>
-            <Text style={[styles.summaryAmount, { color: '#E8923A' }]}>\${(getTotal() - getClaimedTotal()).toFixed(2)}</Text>
-          </View>
+      {loading ? (
+        <View style={styles.loadingBox}>
+          <ActivityIndicator size="large" color="#1A4A3A" />
         </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Items</Text>
-          {session.items?.map((item, index) => (
-            <View key={index} style={[styles.item, index % 2 === 0 ? styles.itemEven : styles.itemOdd]}>
-              <View style={styles.itemLeft}>
-                <Text style={styles.itemName}>{item.name}</Text>
-                <Text style={styles.itemQty}>qty: {item.quantity}</Text>
+      ) : sessions.length === 0 ? (
+        <View style={styles.emptyBox}>
+          <Text style={styles.emptyEmoji}>🧾</Text>
+          <Text style={styles.emptyTitle}>No splits yet</Text>
+          <Text style={styles.emptySubtitle}>Your split history will appear here</Text>
+        </View>
+      ) : (
+        <ScrollView style={styles.list}>
+          {sessions.map((session, index) => (
+            <TouchableOpacity key={index} style={styles.card} onPress={() => router.push({ pathname: '/split-detail', params: { sessionId: session.id } })}>
+              <View style={styles.cardLeft}>
+                <Text style={styles.cardRestaurant}>{session.restaurantName || 'Unknown restaurant'}</Text>
+                <Text style={styles.cardDate}>{formatDate(session.createdAt)}</Text>
+                <View style={[styles.statusBadge, isComplete(session.items) ? styles.statusComplete : styles.statusPending]}>
+                  <Text style={[styles.statusText, isComplete(session.items) ? styles.statusTextComplete : styles.statusTextPending]}>
+                    {isComplete(session.items) ? '✓ Settled' : '⏳ Pending'}
+                  </Text>
+                </View>
               </View>
-              <View style={styles.itemRight}>
-                <Text style={styles.itemPrice}>\${(item.price * item.quantity).toFixed(2)}</Text>
-                {item.claimed > 0 && (
-                  <Text style={styles.itemClaimed}>{item.claimed} claimed</Text>
-                )}
-                {item.available === 0 && (
-                  <Text style={styles.itemFullyClaimed}>✓ all claimed</Text>
-                )}
+              <View style={styles.cardRight}>
+                <Text style={styles.cardTotal}>\${getTotal(session.items).toFixed(2)}</Text>
+                <Text style={styles.cardItems}>{session.items?.length || 0} items</Text>
               </View>
-            </View>
+            </TouchableOpacity>
           ))}
-        </View>
-
-        {(session.tax > 0 || session.tip > 0) && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Charges</Text>
-            {session.tax > 0 && (
-              <View style={styles.chargeRow}>
-                <Text style={styles.chargeLabel}>Tax</Text>
-                <Text style={styles.chargeAmount}>\${session.tax.toFixed(2)}</Text>
-              </View>
-            )}
-            {session.tip > 0 && (
-              <View style={styles.chargeRow}>
-                <Text style={styles.chargeLabel}>Tip</Text>
-                <Text style={styles.chargeAmount}>\${session.tip.toFixed(2)}</Text>
-              </View>
-            )}
-          </View>
-        )}
-      </ScrollView>
+        </ScrollView>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F2EDE0', paddingTop: 130 },
-  error: { fontSize: 16, color: '#6B7B6E', textAlign: 'center', marginTop: 40 },
-  header: { paddingHorizontal: 24, marginBottom: 20 },
-  restaurant: { fontSize: 26, fontWeight: '600', color: '#1A4A3A', marginBottom: 4 },
-  date: { fontSize: 14, color: '#6B7B6E' },
-  summaryRow: { flexDirection: 'row', paddingHorizontal: 24, gap: 10, marginBottom: 24 },
-  summaryCard: { flex: 1, backgroundColor: '#fff', borderRadius: 12, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: '#EEE8D0' },
-  summaryLabel: { fontSize: 12, color: '#6B7B6E', marginBottom: 4 },
-  summaryAmount: { fontSize: 18, fontWeight: '600', color: '#1A4A3A' },
-  section: { marginBottom: 24 },
-  sectionTitle: { fontSize: 13, fontWeight: '500', color: '#6B7B6E', textTransform: 'uppercase', letterSpacing: 0.5, paddingHorizontal: 24, marginBottom: 8 },
-  item: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, paddingHorizontal: 24 },
-  itemEven: { backgroundColor: '#F2EDE0' },
-  itemOdd: { backgroundColor: '#EEE8D0' },
-  itemLeft: { flex: 1 },
-  itemName: { fontSize: 15, color: '#1A1A1A', fontWeight: '500' },
-  itemQty: { fontSize: 13, color: '#6B7B6E', marginTop: 2 },
-  itemRight: { alignItems: 'flex-end' },
-  itemPrice: { fontSize: 15, fontWeight: '600', color: '#1A4A3A' },
-  itemClaimed: { fontSize: 12, color: '#26705A', marginTop: 2 },
-  itemFullyClaimed: { fontSize: 12, color: '#26705A', fontWeight: '500', marginTop: 2 },
-  chargeRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 24, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#EEE8D0' },
-  chargeLabel: { fontSize: 15, color: '#1A1A1A' },
-  chargeAmount: { fontSize: 15, fontWeight: '500', color: '#1A4A3A' },
+  title: { fontSize: 28, fontWeight: '600', color: '#1A4A3A', marginBottom: 8, paddingHorizontal: 24 },
+  subtitle: { fontSize: 15, color: '#6B7B6E', marginBottom: 24, paddingHorizontal: 24 },
+  loadingBox: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  emptyBox: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  emptyEmoji: { fontSize: 48, marginBottom: 16 },
+  emptyTitle: { fontSize: 20, fontWeight: '600', color: '#1A4A3A', marginBottom: 8 },
+  emptySubtitle: { fontSize: 15, color: '#6B7B6E', textAlign: 'center' },
+  list: { flex: 1, paddingHorizontal: 24 },
+  card: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#EEE8D0' },
+  cardLeft: { flex: 1 },
+  cardRestaurant: { fontSize: 16, fontWeight: '500', color: '#1A4A3A', marginBottom: 4 },
+  cardDate: { fontSize: 13, color: '#6B7B6E' },
+  cardRight: { alignItems: 'flex-end' },
+  cardTotal: { fontSize: 18, fontWeight: '600', color: '#1A4A3A', marginBottom: 2 },
+  cardItems: { fontSize: 13, color: '#6B7B6E' },
+  statusBadge: { marginTop: 6, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10, alignSelf: 'flex-start' },
+  statusComplete: { backgroundColor: '#E8F5E9' },
+  statusPending: { backgroundColor: '#FFF8E1' },
+  statusText: { fontSize: 12, fontWeight: '500' },
+  statusTextComplete: { color: '#26705A' },
+  statusTextPending: { color: '#E8923A' },
 });`;
 
-fs.writeFileSync(path.join(appDir, 'split-detail.tsx'), splitDetailScreen);
-console.log('Done! split-detail.tsx created.');
+fs.writeFileSync(path.join(__dirname, '..', 'mobile', 'app', 'history.tsx'), code);
+console.log('Done!');

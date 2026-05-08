@@ -11,7 +11,8 @@ export default function SplitDetailScreen() {
   const router = useRouter();
 
   useEffect(() => {
-    fetch(`https://api.imsettled.app/api/sessions/api/session/${sessionId}`)
+    console.log('Loading session:', sessionId);
+   fetch(`https://api.imsettled.app/api/session/${sessionId}`)
       .then(r => r.json())
       .then(data => {
         setSession(data);

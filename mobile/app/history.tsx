@@ -9,35 +9,8 @@ export default function HistoryScreen() {
   const router = useRouter();
 
   useEffect(() => {
-    // ... fetch code
-  }, []);
-
-  const formatDate = (timestamp) => {
-    // ... date code
-  };
-
-  const isComplete = (items) => {
-    if (!items || items.length === 0) return false;
-    return items.every(item => item.available === 0);
-  };
-
-  const getTotal = (items) => {
-    // ... total code
-  };
-
-  if (loading) {
-    // ...
-  }
-
-  const formatDate = (timestamp) => {
-    return new Date(parseInt(timestamp)).toLocaleDateString('en-US', {
-      month: 'short', day: 'numeric', year: 'numeric'
-    });
-  };
-
-useEffect(() => {
     console.log('Fetching sessions...');
-    fetch('https://api.imsettled.app/api/sessions/api/sessions')
+    fetch('https://api.imsettled.app/api/sessions')
       .then(r => {
         console.log('Sessions response status:', r.status);
         return r.json();
@@ -52,6 +25,17 @@ useEffect(() => {
         setLoading(false);
       });
   }, []);
+
+  const formatDate = (timestamp) => {
+    return new Date(parseInt(timestamp)).toLocaleDateString('en-US', {
+      month: 'short', day: 'numeric', year: 'numeric'
+    });
+  };
+
+  const isComplete = (items) => {
+    if (!items || items.length === 0) return false;
+    return items.every(item => item.available === 0);
+  };
 
   const getTotal = (items) => {
     if (!items) return 0;
@@ -77,7 +61,7 @@ useEffect(() => {
       ) : (
         <ScrollView style={styles.list}>
           {sessions.map((session, index) => (
-           <TouchableOpacity key={index} style={styles.card} onPress={() => router.push({ pathname: '/split-detail', params: { sessionId: session.id } })}>
+            <TouchableOpacity key={index} style={styles.card} onPress={() => router.push({ pathname: '/split-detail', params: { sessionId: session.id } })}>
               <View style={styles.cardLeft}>
                 <Text style={styles.cardRestaurant}>{session.restaurantName || 'Unknown restaurant'}</Text>
                 <Text style={styles.cardDate}>{formatDate(session.createdAt)}</Text>
@@ -108,12 +92,6 @@ const styles = StyleSheet.create({
   emptyEmoji: { fontSize: 48, marginBottom: 16 },
   emptyTitle: { fontSize: 20, fontWeight: '600', color: '#1A4A3A', marginBottom: 8 },
   emptySubtitle: { fontSize: 15, color: '#6B7B6E', textAlign: 'center' },
-  statusBadge: { marginTop: 6, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10, alignSelf: 'flex-start' },
-  statusComplete: { backgroundColor: '#E8F5E9' },
-  statusPending: { backgroundColor: '#FFF8E1' },
-  statusText: { fontSize: 12, fontWeight: '500' },
-  statusTextComplete: { color: '#26705A' },
-  statusTextPending: { color: '#E8923A' },
   list: { flex: 1, paddingHorizontal: 24 },
   card: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#EEE8D0' },
   cardLeft: { flex: 1 },
@@ -122,4 +100,10 @@ const styles = StyleSheet.create({
   cardRight: { alignItems: 'flex-end' },
   cardTotal: { fontSize: 18, fontWeight: '600', color: '#1A4A3A', marginBottom: 2 },
   cardItems: { fontSize: 13, color: '#6B7B6E' },
+  statusBadge: { marginTop: 6, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10, alignSelf: 'flex-start' },
+  statusComplete: { backgroundColor: '#E8F5E9' },
+  statusPending: { backgroundColor: '#FFF8E1' },
+  statusText: { fontSize: 12, fontWeight: '500' },
+  statusTextComplete: { color: '#26705A' },
+  statusTextPending: { color: '#E8923A' },
 });
