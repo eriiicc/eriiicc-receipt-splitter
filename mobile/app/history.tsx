@@ -8,6 +8,27 @@ export default function HistoryScreen() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
+  useEffect(() => {
+    // ... fetch code
+  }, []);
+
+  const formatDate = (timestamp) => {
+    // ... date code
+  };
+
+  const isComplete = (items) => {
+    if (!items || items.length === 0) return false;
+    return items.every(item => item.available === 0);
+  };
+
+  const getTotal = (items) => {
+    // ... total code
+  };
+
+  if (loading) {
+    // ...
+  }
+
   const formatDate = (timestamp) => {
     return new Date(parseInt(timestamp)).toLocaleDateString('en-US', {
       month: 'short', day: 'numeric', year: 'numeric'
@@ -56,10 +77,15 @@ useEffect(() => {
       ) : (
         <ScrollView style={styles.list}>
           {sessions.map((session, index) => (
-            <TouchableOpacity key={index} style={styles.card} onPress={() => router.push({ pathname: '/split-detail', params: { sessionId: session.id } })}>
+           <TouchableOpacity key={index} style={styles.card} onPress={() => router.push({ pathname: '/split-detail', params: { sessionId: session.id } })}>
               <View style={styles.cardLeft}>
                 <Text style={styles.cardRestaurant}>{session.restaurantName || 'Unknown restaurant'}</Text>
                 <Text style={styles.cardDate}>{formatDate(session.createdAt)}</Text>
+                <View style={[styles.statusBadge, isComplete(session.items) ? styles.statusComplete : styles.statusPending]}>
+                  <Text style={[styles.statusText, isComplete(session.items) ? styles.statusTextComplete : styles.statusTextPending]}>
+                    {isComplete(session.items) ? '✓ Settled' : '⏳ Pending'}
+                  </Text>
+                </View>
               </View>
               <View style={styles.cardRight}>
                 <Text style={styles.cardTotal}>${getTotal(session.items).toFixed(2)}</Text>
@@ -82,6 +108,12 @@ const styles = StyleSheet.create({
   emptyEmoji: { fontSize: 48, marginBottom: 16 },
   emptyTitle: { fontSize: 20, fontWeight: '600', color: '#1A4A3A', marginBottom: 8 },
   emptySubtitle: { fontSize: 15, color: '#6B7B6E', textAlign: 'center' },
+  statusBadge: { marginTop: 6, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10, alignSelf: 'flex-start' },
+  statusComplete: { backgroundColor: '#E8F5E9' },
+  statusPending: { backgroundColor: '#FFF8E1' },
+  statusText: { fontSize: 12, fontWeight: '500' },
+  statusTextComplete: { color: '#26705A' },
+  statusTextPending: { color: '#E8923A' },
   list: { flex: 1, paddingHorizontal: 24 },
   card: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#EEE8D0' },
   cardLeft: { flex: 1 },

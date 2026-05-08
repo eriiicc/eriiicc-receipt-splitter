@@ -75,15 +75,29 @@ const getClaims = async (sessionId) => {
 
 const getAllSessions = async () => {
   const result = await pool.query('SELECT * FROM sessions ORDER BY created_at DESC');
-  return result.rows.map(row => ({
-    id: row.id,
-    restaurantName: row.restaurant_name,
-    items: row.items,
-    tax: row.tax,
-    tip: row.tip,
-    paymentInfo: row.payment_info,
-    createdAt: row.created_at,
-  }));
+  const sessions = [];
+  for (const row of result.rows) {
+    const claims = await getClaims(row.id);
+    const claimedMap = {};
+    for (const claim of claims) {
+      claimedMap[claim.itemIndex] = (claimedMap[claim.itemIndex] || 0) + claim.qtyClaimed;
+    }
+    const items = (row.items || []).map((item, index) => ({
+      ...item,
+      claimed: claimedMap[index] || 0,
+      available: item.quantity - (claimedMap[index] || 0),
+    }));
+    sessions.push({
+      id: row.id,
+      restaurantName: row.restaurant_name,
+      items,
+      tax: row.tax,
+      tip: row.tip,
+      paymentInfo: row.payment_info,
+      createdAt: row.created_at,
+    });
+  }
+  return sessions;
 };
 
 module.exports = { init, createSession, getSession, claimItems, getClaims, getAllSessions };
