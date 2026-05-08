@@ -49,7 +49,7 @@ const getClaims = async (sessionId) => {
   return db.claims.filter(c => c.sessionId === sessionId);
 };
 
-module.exports = { init, createSession, getSession, claimItems, getClaims };
+module.exports = { init, createSession, getSession, claimItems, getClaims, getAllSessions };
 
 const getAllSessions = async () => {
   const db = readDb();
