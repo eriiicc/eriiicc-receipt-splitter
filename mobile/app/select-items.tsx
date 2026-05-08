@@ -57,6 +57,7 @@ export default function SelectItemsScreen() {
         .map((item: any, index: number) => ({ itemIndex: index, qty: item.selectedQty }))
         .filter((s: any) => s.qty > 0);
 
+        console.log('Saving session:', session || Date.now(), 'items:', itemList.length);
       await fetch(`https://eriiicc-receipt-splitter-production.up.railway.app/api/session/${session || Date.now()}/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
