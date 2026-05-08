@@ -48,7 +48,7 @@ export default function HistoryScreen() {
       ) : (
         <ScrollView style={styles.list}>
           {sessions.map((session, index) => (
-            <TouchableOpacity key={index} style={styles.card}>
+            <TouchableOpacity key={index} style={styles.card} onPress={() => router.push({ pathname: '/split-detail', params: { sessionId: session.id } })}>
               <View style={styles.cardLeft}>
                 <Text style={styles.cardRestaurant}>{session.restaurantName || 'Unknown restaurant'}</Text>
                 <Text style={styles.cardDate}>{formatDate(session.createdAt)}</Text>

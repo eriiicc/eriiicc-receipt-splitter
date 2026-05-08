@@ -143,8 +143,7 @@ app.post('/api/session/:id/claim', async (req, res) => {
 
 app.get('/api/sessions', async (req, res) => {
   try {
-    const db = require('./db/index');
-    const sessions = await db.getAllSessions();
+    const sessions = await getAllSessions();
     res.json({ sessions });
   } catch (error) {
     res.status(500).json({ error: error.message });

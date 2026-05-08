@@ -1,9 +1,4 @@
-const fs = require('fs');
-const path = require('path');
-
-const appDir = path.join(__dirname, '..', 'mobile', 'app');
-
-const splitDetailScreen = `import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import BackButton from '../components/BackButton';
@@ -16,7 +11,7 @@ export default function SplitDetailScreen() {
   const router = useRouter();
 
   useEffect(() => {
-    fetch(\`https://eriiicc-receipt-splitter-production.up.railway.app/api/session/\${sessionId}\`)
+    fetch(`https://eriiicc-receipt-splitter-production.up.railway.app/api/session/${sessionId}`)
       .then(r => r.json())
       .then(data => {
         setSession(data);
@@ -71,15 +66,15 @@ export default function SplitDetailScreen() {
         <View style={styles.summaryRow}>
           <View style={styles.summaryCard}>
             <Text style={styles.summaryLabel}>Bill total</Text>
-            <Text style={styles.summaryAmount}>\${getTotal().toFixed(2)}</Text>
+            <Text style={styles.summaryAmount}>${getTotal().toFixed(2)}</Text>
           </View>
           <View style={styles.summaryCard}>
             <Text style={styles.summaryLabel}>Claimed</Text>
-            <Text style={[styles.summaryAmount, { color: '#26705A' }]}>\${getClaimedTotal().toFixed(2)}</Text>
+            <Text style={[styles.summaryAmount, { color: '#26705A' }]}>${getClaimedTotal().toFixed(2)}</Text>
           </View>
           <View style={styles.summaryCard}>
             <Text style={styles.summaryLabel}>Remaining</Text>
-            <Text style={[styles.summaryAmount, { color: '#E8923A' }]}>\${(getTotal() - getClaimedTotal()).toFixed(2)}</Text>
+            <Text style={[styles.summaryAmount, { color: '#E8923A' }]}>${(getTotal() - getClaimedTotal()).toFixed(2)}</Text>
           </View>
         </View>
 
@@ -92,7 +87,7 @@ export default function SplitDetailScreen() {
                 <Text style={styles.itemQty}>qty: {item.quantity}</Text>
               </View>
               <View style={styles.itemRight}>
-                <Text style={styles.itemPrice}>\${(item.price * item.quantity).toFixed(2)}</Text>
+                <Text style={styles.itemPrice}>${(item.price * item.quantity).toFixed(2)}</Text>
                 {item.claimed > 0 && (
                   <Text style={styles.itemClaimed}>{item.claimed} claimed</Text>
                 )}
@@ -110,13 +105,13 @@ export default function SplitDetailScreen() {
             {session.tax > 0 && (
               <View style={styles.chargeRow}>
                 <Text style={styles.chargeLabel}>Tax</Text>
-                <Text style={styles.chargeAmount}>\${session.tax.toFixed(2)}</Text>
+                <Text style={styles.chargeAmount}>${session.tax.toFixed(2)}</Text>
               </View>
             )}
             {session.tip > 0 && (
               <View style={styles.chargeRow}>
                 <Text style={styles.chargeLabel}>Tip</Text>
-                <Text style={styles.chargeAmount}>\${session.tip.toFixed(2)}</Text>
+                <Text style={styles.chargeAmount}>${session.tip.toFixed(2)}</Text>
               </View>
             )}
           </View>
@@ -151,7 +146,4 @@ const styles = StyleSheet.create({
   chargeRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 24, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#EEE8D0' },
   chargeLabel: { fontSize: 15, color: '#1A1A1A' },
   chargeAmount: { fontSize: 15, fontWeight: '500', color: '#1A4A3A' },
-});`;
-
-fs.writeFileSync(path.join(appDir, 'split-detail.tsx'), splitDetailScreen);
-console.log('Done! split-detail.tsx created.');
+});

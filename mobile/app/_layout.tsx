@@ -13,6 +13,7 @@ export default function RootLayout() {
       <Stack.Screen name="guest" options={{ headerShown: false }} />
       <Stack.Screen name="settings" options={{ headerShown: false }} />
       <Stack.Screen name="history" options={{ headerShown: false }} />
+      <Stack.Screen name="split-detail" options={{ headerShown: false }} />
     </Stack>
   );
 }
