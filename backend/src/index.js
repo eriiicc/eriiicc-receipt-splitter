@@ -225,10 +225,24 @@ app.get('/guest', async (req, res) => {
   </style>
 </head>
 <body>
-  <div class="header">
+ <div class="header">
     <h1>Settled</h1>
     <p>Select what you ordered</p>
   </div>
+
+  <div id="name-section" style="padding: 24px; background: #fff; border-bottom: 1px solid #EEE8D0;">
+    <p style="font-size: 14px; color: #6B7B6E; margin-bottom: 12px;">What's your first name?</p>
+    <div style="display: flex; gap: 10px;">
+      <input id="guest-name" type="text" placeholder="Your first name" 
+        style="flex: 1; padding: 12px 16px; border: 1.5px solid #EEE8D0; border-radius: 10px; font-size: 16px; outline: none;"
+        onkeyup="checkName()" />
+      <button onclick="submitName()" id="name-btn" 
+        style="padding: 12px 20px; background: #1A4A3A; color: #F0D080; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; opacity: 0.5;" 
+        disabled>Let's go</button>
+    </div>
+  </div>
+
+  <div id="main-content" style="display: none;">
   <div class="restaurant">
     <h2>${sessionData.restaurantName || 'Your Bill'}</h2>
     <p>Tap items to claim what you ordered</p>
@@ -245,6 +259,8 @@ app.get('/guest', async (req, res) => {
     <button class="confirm-btn" id="confirm-btn" onclick="confirmSelection()" disabled>Claim my items</button>
   </div>
 
+  </div><!-- end main-content -->
+
   <div class="payment-section" id="payment-section">
     <div class="payment-title">Pay your share</div>
     <div class="payment-subtitle">Choose how you want to pay</div>
@@ -258,6 +274,22 @@ app.get('/guest', async (req, res) => {
   </div>
 
   <script>
+let guestName = 'Guest';
+
+    function checkName() {
+      const val = document.getElementById('guest-name').value.trim();
+      const btn = document.getElementById('name-btn');
+      btn.disabled = val.length < 1;
+      btn.style.opacity = val.length < 1 ? '0.5' : '1';
+    }
+
+    function submitName() {
+      const val = document.getElementById('guest-name').value.trim();
+      if (!val) return;
+      guestName = val;
+      document.getElementById('name-section').style.display = 'none';
+      document.getElementById('main-content').style.display = 'block';
+    }
     const sessionData = ${sessionJson};
     const items = sessionData.items;
     const tax = sessionData.tax || 0;
@@ -322,10 +354,10 @@ app.get('/guest', async (req, res) => {
         .filter(([_, qty]) => qty > 0)
         .map(([index, qty]) => ({ itemIndex: parseInt(index), qty }));
 
-      await fetch('/api/session/${session}/claim', {
+    await fetch('/api/session/${session}/claim', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ selections: sel, claimedBy: 'guest-web' })
+        body: JSON.stringify({ selections: sel, claimedBy: guestName })
       });
 
       const total = getTotal().toFixed(2);
