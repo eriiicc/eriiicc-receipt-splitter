@@ -42,9 +42,6 @@ export default function HomeScreen() {
       <TouchableOpacity style={styles.button} onPress={() => router.push('/new-split')}>
         <Text style={styles.buttonText}>+ New Split</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.testButton} onPress={() => router.push({ pathname: '/guest', params: { sessionId: '123' } })}>
-        <Text style={styles.testButtonText}>Test Guest View</Text>
-      </TouchableOpacity>
       <TouchableOpacity style={styles.historyButton} onPress={() => router.push('/history')}>
         <Text style={styles.historyButtonText}>View Split History</Text>
       </TouchableOpacity>
@@ -69,6 +66,4 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 15, color: '#6B7B6E', marginBottom: 40 },
   button: { backgroundColor: '#1A4A3A', padding: 16, borderRadius: 10, alignItems: 'center' },
   buttonText: { color: '#F0D080', fontSize: 16, fontWeight: '500' },
-  testButton: { marginTop: 12, padding: 16, borderRadius: 10, borderWidth: 1, borderColor: '#1A4A3A', alignItems: 'center' },
-  testButtonText: { color: '#1A4A3A', fontSize: 16 },
 });
