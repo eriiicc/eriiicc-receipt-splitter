@@ -93,7 +93,7 @@ app.post('/api/send-invite', async (req, res) => {
       process.env.TWILIO_AUTH_TOKEN
     );
 
- const guestWebUrl = `https://eriiicc-receipt-splitter-production.up.railway.app/guest?session=${sessionId}`;
+ const guestWebUrl = `https://api.imsettled.app/api/session/${sessionId}`;
     
     const message = await client.messages.create({
       body: `${senderName} invited you to split a bill${restaurantName ? ' at ' + restaurantName : ''}! Select your items here: ${guestWebUrl}`,

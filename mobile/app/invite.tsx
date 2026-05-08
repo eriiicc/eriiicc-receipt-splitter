@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform, FlatList, Modal } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform, FlatList, Modal, Share } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -103,7 +103,7 @@ const openContacts = async () => {
       setSending(true);
       const sessionId = Date.now().toString();
       for (const guest of guests) {
-        await fetch('https://eriiicc-receipt-splitter-production.up.railway.app/api/send-invite', {
+        await fetch('https://api.imsettled.app/api/send-invite', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
          body: JSON.stringify({
@@ -114,18 +114,27 @@ const openContacts = async () => {
             tax: parseFloat(tax as string) || 0,
             tip: parseFloat(tip as string) || 0,
             restaurantName: restaurantName as string,
-            guestLink: `https://eriiicc-receipt-splitter-production.up.railway.app/guest?session=${sessionId}`,
+            guestLink: `https://api.imsettled.app/api/session/${sessionId}`,
             paymentInfo: paymentInfoRef.current,
           }),
         });
       }
-      const guestLink = `https://eriiicc-receipt-splitter-production.up.railway.app/guest?session=${sessionId}`;
+      const guestLink = `https://api.imsettled.app/api/session/${sessionId}`;
       Alert.alert(
         'Invites sent!',
-        `Sent to ${guests.length} guest${guests.length > 1 ? 's' : ''}. You can also share the link manually.`,
+        `Sent to ${guests.length} guest${guests.length > 1 ? 's' : ''}. Share the link to invite more people.`,
         [
           {
-            text: 'Copy guest link',
+            text: 'Share link',
+            onPress: async () => {
+              await Share.share({
+                message: `${restaurantName ? restaurantName + ' - ' : ''}Split the bill with me on Settled! Select your items here: ${guestLink}`,
+                url: guestLink,
+              });
+            }
+          },
+          {
+            text: 'Copy link',
             onPress: async () => {
               await Clipboard.setStringAsync(guestLink);
               Alert.alert('Copied!', 'Guest link copied to clipboard');

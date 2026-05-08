@@ -16,7 +16,7 @@ export default function HistoryScreen() {
 
 useEffect(() => {
     console.log('Fetching sessions...');
-    fetch('https://eriiicc-receipt-splitter-production.up.railway.app/api/sessions')
+    fetch('https://api.imsettled.app/api/sessions/api/sessions')
       .then(r => {
         console.log('Sessions response status:', r.status);
         return r.json();

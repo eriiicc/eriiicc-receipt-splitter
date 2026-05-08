@@ -16,7 +16,7 @@ export default function SplitDetailScreen() {
   const router = useRouter();
 
   useEffect(() => {
-    fetch(\`https://eriiicc-receipt-splitter-production.up.railway.app/api/session/\${sessionId}\`)
+    fetch(\`https://api.imsettled.app/api/sessions/api/session/\${sessionId}\`)
       .then(r => r.json())
       .then(data => {
         setSession(data);

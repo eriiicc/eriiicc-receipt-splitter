@@ -58,7 +58,7 @@ export default function SelectItemsScreen() {
         .filter((s: any) => s.qty > 0);
 
         console.log('Saving session:', session || Date.now(), 'items:', itemList.length);
-      await fetch(`https://eriiicc-receipt-splitter-production.up.railway.app/api/session/${session || Date.now()}/save`, {
+      await fetch(`https://api.imsettled.app/api/sessions/api/session/${session || Date.now()}/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
