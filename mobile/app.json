@@ -4,12 +4,12 @@
     "slug": "settled",
     "version": "1.0.0",
     "orientation": "portrait",
-   "icon": "./assets/icon.png",
-"splash": {
-  "image": "./assets/splash.png",
-  "resizeMode": "contain",
-  "backgroundColor": "#1A4A3A"
-},
+  "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1A4A3A"
+    },
     "scheme": "settled",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -23,9 +23,6 @@
         "LSApplicationQueriesSchemes": [
           "venmo",
           "cashapp",
-          "zelle",
-          "venmo",
-          "cashapp",
           "zelle"
         ],
         "ITSAppUsesNonExemptEncryption": false
@@ -33,10 +30,10 @@
       "bundleIdentifier": "com.ericgr.settled"
     },
     "android": {
-     "adaptiveIcon": {
+    "adaptiveIcon": {
   "foregroundImage": "./assets/adaptive-icon.png",
   "backgroundColor": "#1A4A3A"
-}
+},
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "permissions": [
@@ -80,19 +77,12 @@
         }
       ],
       [
-        "expo-splash-screen",
-        {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#F2EDE0",
-          "dark": {
-            "backgroundColor": "#1A4A3A"
-          }
-        }
-      ],
+      ["expo-splash-screen", {
+  "image": "./assets/splash.png",
+  "resizeMode": "contain",
+  "backgroundColor": "#1A4A3A"
+}],
       "expo-web-browser",
-      "@react-native-google-signin/google-signin"
     ],
     "experiments": {
       "typedRoutes": true,
