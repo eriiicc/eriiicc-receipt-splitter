@@ -408,8 +408,9 @@ app.get('/api/session/:id/host-payment-info', async (req, res) => {
   }
 });
 
-console.log('Save session request:', req.params.id);
+
 app.post('/api/session/:id/save', async (req, res) => {
+  console.log('Save session request:', req.params.id);
   try {
     const { selections, claimedBy, items, tax, tip, restaurantName, sessionId } = req.body;
     const id = req.params.id;
