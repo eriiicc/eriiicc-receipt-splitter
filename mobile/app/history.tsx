@@ -8,21 +8,23 @@ export default function HistoryScreen() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  useEffect(() => {
+useEffect(() => {
+    console.log('Fetching sessions...');
     fetch('https://eriiicc-receipt-splitter-production.up.railway.app/api/sessions')
-      .then(r => r.json())
+      .then(r => {
+        console.log('Sessions response status:', r.status);
+        return r.json();
+      })
       .then(data => {
+        console.log('Sessions data:', JSON.stringify(data).substring(0, 200));
         setSessions(data.sessions || []);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(err => {
+        console.log('Sessions error:', err.message);
+        setLoading(false);
+      });
   }, []);
-
-  const formatDate = (timestamp) => {
-    return new Date(timestamp).toLocaleDateString('en-US', {
-      month: 'short', day: 'numeric', year: 'numeric'
-    });
-  };
 
   const getTotal = (items) => {
     if (!items) return 0;
