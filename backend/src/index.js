@@ -96,7 +96,7 @@ app.post('/api/send-invite', async (req, res) => {
  const guestWebUrl = `https://api.imsettled.app/api/session/${sessionId}`;
     
     const message = await client.messages.create({
-      body: `${senderName} invited you to split a bill${restaurantName ? ' at ' + restaurantName : ''}! Select your items here: ${guestWebUrl}`,
+body: `${senderName} invited you to Get Settled${restaurantName ? ' at ' + restaurantName : ''}! Select your items: ${guestWebUrl}`,
       from: process.env.TWILIO_PHONE_NUMBER,
       to: phoneNumber,
     });
