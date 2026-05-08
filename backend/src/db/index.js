@@ -1,58 +1,89 @@
-const fs = require('fs');
-const path = require('path');
+const { Pool } = require('pg');
 
-const DB_PATH = path.join(__dirname, '../../db.json');
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false,
+});
 
-const readDb = () => {
-  if (!fs.existsSync(DB_PATH)) {
-    return { sessions: {}, claims: [] };
-  }
-  try {
-    return JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
-  } catch {
-    return { sessions: {}, claims: [] };
-  }
-};
+const init = async () => {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS sessions (
+      id TEXT PRIMARY KEY,
+      restaurant_name TEXT,
+      items JSONB,
+      tax REAL,
+      tip REAL,
+      payment_info JSONB,
+      created_at BIGINT
+    );
 
-const writeDb = (data) => {
-  fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
-};
-
-const init = () => {
-  if (!fs.existsSync(DB_PATH)) {
-    writeDb({ sessions: {}, claims: [] });
-  }
+    CREATE TABLE IF NOT EXISTS claims (
+      id SERIAL PRIMARY KEY,
+      session_id TEXT,
+      item_index INTEGER,
+      qty_claimed INTEGER,
+      claimed_by TEXT,
+      created_at BIGINT
+    );
+  `);
+  console.log('Database initialized');
 };
 
 const createSession = async (id, restaurantName, items, tax, tip, paymentInfo) => {
-  const db = readDb();
-  db.sessions[id] = { id, restaurantName, items, tax, tip, paymentInfo: paymentInfo || {}, createdAt: Date.now() };
-  writeDb(db);
+  await pool.query(
+    `INSERT INTO sessions (id, restaurant_name, items, tax, tip, payment_info, created_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
+     ON CONFLICT (id) DO UPDATE SET items = $3, tax = $4, tip = $5, payment_info = $6`,
+    [id, restaurantName, JSON.stringify(items), tax, tip, JSON.stringify(paymentInfo || {}), Date.now()]
+  );
 };
 
-
 const getSession = async (id) => {
-  const db = readDb();
-  return db.sessions[id] || null;
+  const result = await pool.query('SELECT * FROM sessions WHERE id = $1', [id]);
+  if (result.rows.length === 0) return null;
+  const row = result.rows[0];
+  return {
+    id: row.id,
+    restaurantName: row.restaurant_name,
+    items: row.items,
+    tax: row.tax,
+    tip: row.tip,
+    paymentInfo: row.payment_info,
+    createdAt: row.created_at,
+  };
 };
 
 const claimItems = async (sessionId, selections, claimedBy) => {
-  const db = readDb();
   for (const { itemIndex, qty } of selections) {
-    db.claims.push({ sessionId, itemIndex, qtyClaimed: qty, claimedBy, createdAt: Date.now() });
+    await pool.query(
+      `INSERT INTO claims (session_id, item_index, qty_claimed, claimed_by, created_at)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [sessionId, itemIndex, qty, claimedBy, Date.now()]
+    );
   }
-  writeDb(db);
 };
 
 const getClaims = async (sessionId) => {
-  const db = readDb();
-  return db.claims.filter(c => c.sessionId === sessionId);
+  const result = await pool.query('SELECT * FROM claims WHERE session_id = $1', [sessionId]);
+  return result.rows.map(row => ({
+    sessionId: row.session_id,
+    itemIndex: row.item_index,
+    qtyClaimed: row.qty_claimed,
+    claimedBy: row.claimed_by,
+  }));
 };
 
 const getAllSessions = async () => {
-  const db = readDb();
-  console.log('Total sessions in DB:', Object.keys(db.sessions).length);
-  return Object.values(db.sessions).sort((a, b) => b.createdAt - a.createdAt);
+  const result = await pool.query('SELECT * FROM sessions ORDER BY created_at DESC');
+  return result.rows.map(row => ({
+    id: row.id,
+    restaurantName: row.restaurant_name,
+    items: row.items,
+    tax: row.tax,
+    tip: row.tip,
+    paymentInfo: row.payment_info,
+    createdAt: row.created_at,
+  }));
 };
 
 module.exports = { init, createSession, getSession, claimItems, getClaims, getAllSessions };
