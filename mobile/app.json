@@ -49,7 +49,7 @@
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
-    "plugins": [
+"plugins": [
       "expo-router",
       [
         "expo-camera",
@@ -58,11 +58,11 @@
         }
       ],
       [
-  "@react-native-google-signin/google-signin",
-  {
-    "iosUrlScheme": "com.googleusercontent.apps.351911635604-hin3a2jgn1hc0ltjqpurn34c4rstit4k"
-  }
-],
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.351911635604-hin3a2jgn1hc0ltjqpurn34c4rstit4k"
+        }
+      ],
       [
         "expo-contacts",
         {
@@ -77,12 +77,14 @@
         }
       ],
       [
-      ["expo-splash-screen", {
-  "image": "./assets/splash.png",
-  "resizeMode": "contain",
-  "backgroundColor": "#1A4A3A"
-}],
-      "expo-web-browser",
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#1A4A3A"
+        }
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
