@@ -255,7 +255,7 @@ app.get('/guest', async (req, res) => {
     </div>
     <button class="pay-btn pay-venmo" id="venmo-btn" onclick="payVenmo()">Pay with Venmo</button>
     <button class="pay-btn pay-cashapp" id="cashapp-btn" onclick="payCashApp()">Pay with Cash App</button>
-    <button class="pay-btn pay-zelle" onclick="payZelle()">Pay with Zelle</button>
+    <button class="pay-btn pay-zelle" id="zelle-btn" onclick="payZelle()">Pay with Zelle</button>
   </div>
 
   <script>
@@ -318,7 +318,7 @@ app.get('/guest', async (req, res) => {
       document.getElementById('confirm-btn').disabled = getSubtotal() === 0;
     }
 
-    async function confirmSelection() {
+  async function confirmSelection() {
       const sel = Object.entries(selections)
         .filter(([_, qty]) => qty > 0)
         .map(([index, qty]) => ({ itemIndex: parseInt(index), qty }));
@@ -336,21 +336,47 @@ app.get('/guest', async (req, res) => {
       document.querySelector('.restaurant').style.display = 'none';
       document.getElementById('payment-section').classList.add('show');
 
-      // Set up payment buttons with host info
-      fetch('/api/session/${session}/host-payment-info')
-        .then(r => r.json())
-        .then(info => {
-          if (info.venmo) {
-            document.getElementById('venmo-btn').onclick = () => {
-              window.location.href = 'venmo://paycharge?txn=pay&recipients=' + info.venmo + '&amount=' + total + '&note=Settled+-+' + encodeURIComponent(sessionData.restaurantName || 'Bill');
-            };
-          }
-          if (info.cashapp) {
-            document.getElementById('cashapp-btn').onclick = () => {
-              window.location.href = 'cashapp://cash.app/pay/' + info.cashapp;
-            };
-          }
-        }).catch(() => {});
+      try {
+        const response = await fetch('/api/session/${session}/host-payment-info');
+        const info = await response.json();
+        
+        const venmoBtn = document.getElementById('venmo-btn');
+        const cashappBtn = document.getElementById('cashapp-btn');
+        const zelleBtn = document.getElementById('zelle-btn');
+
+        if (info.venmo) {
+          venmoBtn.style.display = 'block';
+          venmoBtn.onclick = () => {
+            window.location.href = 'venmo://paycharge?txn=pay&recipients=' + info.venmo + '&amount=' + total + '&note=Settled+-+' + encodeURIComponent(sessionData.restaurantName || 'Bill');
+          };
+        } else {
+          venmoBtn.style.display = 'none';
+        }
+
+        if (info.cashapp) {
+          cashappBtn.style.display = 'block';
+          cashappBtn.onclick = () => {
+            const cashTag = info.cashapp.startsWith('$') ? info.cashapp : '$' + info.cashapp;
+            window.location.href = 'cashapp://cash.app/pay/' + cashTag;
+            setTimeout(() => {
+              window.location.href = 'https://cash.app/' + cashTag;
+            }, 500);
+          };
+        } else {
+          cashappBtn.style.display = 'none';
+        }
+
+        if (info.zelle) {
+          zelleBtn.style.display = 'block';
+          zelleBtn.onclick = () => {
+            alert('Send $' + total + ' via Zelle to: ' + info.zelle);
+          };
+        } else {
+          zelleBtn.style.display = 'none';
+        }
+      } catch(e) {
+        console.log('Could not load payment info', e);
+      }
     }
 
     function payVenmo() {

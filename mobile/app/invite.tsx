@@ -1,12 +1,10 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform, FlatList, Modal } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Contacts from 'expo-contacts';
 import BackButton from '../components/BackButton';
-import { useRef, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function InviteScreen() {
   const [phone, setPhone] = useState('');
@@ -121,7 +119,7 @@ const openContacts = async () => {
           }),
         });
       }
-      const guestLink = `settled://guest?sessionId=${sessionId}`;
+      const guestLink = `https://eriiicc-receipt-splitter-production.up.railway.app/guest?session=${sessionId}`;
       Alert.alert(
         'Invites sent!',
         `Sent to ${guests.length} guest${guests.length > 1 ? 's' : ''}. You can also share the link manually.`,
